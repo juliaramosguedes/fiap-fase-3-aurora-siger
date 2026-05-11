@@ -33,10 +33,12 @@ Maintenance:
   Equipment failure: immediate for priority 1-3; probabilistic for others.
 """
 
+from __future__ import annotations
+
 import random
 
-from src.alerts import enqueue_alert
-from src.constants import (
+from .alerts import enqueue_alert
+from .constants import (
     BATTERY_MIN_KWH,
     CRITICAL_MODULE_PRIORITY_THRESHOLD,
     ENERGY_ALERT_THRESHOLD_KW,
@@ -47,10 +49,10 @@ from src.constants import (
     MAINTENANCE_PROBABILITY_PER_CYCLE,
     SOLAR_DUST_CRITICAL_THRESHOLD,
 )
-from src.energy import perform_solar_maintenance, perform_wind_maintenance
-from src.enums import AlertType, SystemStatus
-from src.forecast import will_cross_threshold_soon
-from src.models import ColonyState, Module
+from .energy import perform_solar_maintenance, perform_wind_maintenance
+from .enums import AlertType, SystemStatus
+from .forecast import will_cross_threshold_soon
+from .models import ColonyState, Module
 
 
 def determine_stage(state: ColonyState) -> SystemStatus:

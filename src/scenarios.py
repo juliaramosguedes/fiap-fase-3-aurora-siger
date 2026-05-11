@@ -26,10 +26,12 @@ Module operation model:
   Without wind: CRITICAL before dawn. With wind: 19.2h autonomy. Realistic behavior.
 """
 
+from __future__ import annotations
+
 import random
 from collections import deque
 
-from src.constants import (
+from .constants import (
     BATTERY_TOTAL_CAPACITY_KWH,
     COLONY_INTERNAL_TEMP_NOMINAL_C,
     COM_CONSUMPTION_KW,
@@ -48,8 +50,8 @@ from src.constants import (
     WIND_CUT_IN_MS,
     WIND_SPEED_SENSOR_FALLBACK_MS,
 )
-from src.enums import ModuleName, SystemStatus
-from src.models import (
+from .enums import ModuleName, SystemStatus
+from .models import (
     ColonyState,
     EnvironmentReading,
     EnergyState,
@@ -59,7 +61,7 @@ from src.models import (
 )
 
 
-def _build_default_modules() -> list:
+def _build_default_modules() -> list[Module]:
     """
     Build the eight colony modules at nominal consumption, all active 24h.
 

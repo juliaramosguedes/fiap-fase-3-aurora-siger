@@ -14,8 +14,10 @@ Predictions are only used when count >= FORECAST_MIN_CYCLES.
 Below that threshold the system operates on current state only.
 """
 
-from src.constants import FORECAST_HORIZON_CYCLES, FORECAST_MIN_CYCLES
-from src.models import ColonyState, OnlineRegression
+from __future__ import annotations
+
+from .constants import FORECAST_HORIZON_CYCLES, FORECAST_MIN_CYCLES
+from .models import ColonyState, OnlineRegression
 
 
 # ---------------------------------------------------------------------------

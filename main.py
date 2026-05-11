@@ -20,7 +20,7 @@ Usage:
 import argparse
 import random
 
-from src.constants import DUST_STORM_MAX_DURATION_CYCLES
+from src.constants import RANDOM_SEED
 from src.models import ColonyState
 from src.scenarios import default_scenario, random_scenario
 from src.simulation import run_simulation
@@ -57,12 +57,6 @@ def _parse_args() -> argparse.Namespace:
             "Default: 200 ciclos (~100 sols)."
         ),
     )
-    parser.add_argument(
-        "--seed",
-        type=int,
-        default=None,
-        help="Semente para reprodutibilidade (default: aleatório)",
-    )
     return parser.parse_args()
 
 
@@ -77,14 +71,13 @@ def _apply_stress_mode(state: ColonyState, cycles: int) -> None:
     """
     intensity = random.uniform(0.7, 1.0)
     state.environment.dust_storm_intensity = intensity
-    state.active_storm_cycles_remaining = cycles  # storm lasts entire run
+    state.active_storm_cycles_remaining = cycles
 
 
 if __name__ == "__main__":
     args = _parse_args()
 
-    if args.seed is not None:
-        random.seed(args.seed)
+    random.seed(RANDOM_SEED)
 
     if args.anomaly < 0.0 or args.anomaly > 1.0:
         print("Erro: --anomaly deve estar entre 0.0 e 1.0")
@@ -92,7 +85,7 @@ if __name__ == "__main__":
 
     cycles = args.cycles
     if args.stress and cycles == 48:
-        cycles = 200  # stress default: 200 ciclos (~100 sols)
+        cycles = 200
 
     state = random_scenario() if args.random else default_scenario()
 
@@ -100,7 +93,5 @@ if __name__ == "__main__":
         _apply_stress_mode(state, cycles)
 
     anomaly_probability = args.anomaly if not args.stress else 0.15
-    # In stress mode: equipment failures and sensor errors still occur (0.15)
-    # but dust storm is already forced — storm anomaly injection is blocked
 
     run_simulation(state, cycles=cycles, anomaly_probability=anomaly_probability)

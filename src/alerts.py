@@ -1,7 +1,9 @@
 """Alert queue management for the MGAB — Autonomous Base Management Module."""
 
-from src.enums import AlertType
-from src.models import AlertEntry, ColonyState
+from __future__ import annotations
+
+from .enums import AlertType
+from .models import AlertEntry, ColonyState
 
 
 def enqueue_alert(state: ColonyState, alert_type: AlertType, detail: str) -> None:

@@ -1,5 +1,7 @@
 """Enumerations for the MGAB — Autonomous Base Management Module."""
 
+from __future__ import annotations
+
 from enum import Enum
 
 
@@ -8,6 +10,9 @@ class SystemStatus(str, Enum):
     ALERT       = "EM ALERTA"
     CRITICAL    = "CRÍTICO"
     RECOVERING  = "RECUPERANDO"
+
+    def __str__(self) -> str:
+        return self.value
 
 
 class AlertType(str, Enum):
@@ -18,11 +23,17 @@ class AlertType(str, Enum):
     SENSOR_ERROR         = "ERRO DE SENSOR"
     MAINTENANCE_REQUIRED = "MANUTENÇÃO NECESSÁRIA"
 
+    def __str__(self) -> str:
+        return self.value
+
 
 class AnomalyType(str, Enum):
     DUST_STORM        = "TEMPESTADE DE POEIRA"
     EQUIPMENT_FAILURE = "FALHA DE EQUIPAMENTO"
     SENSOR_ERROR      = "ERRO DE SENSOR"
+
+    def __str__(self) -> str:
+        return self.value
 
 
 class ModuleName(str, Enum):
@@ -34,3 +45,6 @@ class ModuleName(str, Enum):
     SCIENCE        = "SCI-01 Science Lab"
     LOGISTICS      = "LOG-01 Logistics"
     MINING         = "MIN-01 ISRU Mining"
+
+    def __str__(self) -> str:
+        return self.value

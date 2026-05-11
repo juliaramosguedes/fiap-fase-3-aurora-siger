@@ -1,12 +1,82 @@
-# MGAB — Módulo de Gerenciamento Autônomo de Base
+# ☄️ MGAB — Módulo de Gerenciamento Autônomo de Base
 
-![Python](https://img.shields.io/badge/PYTHON-3.9+-3776AB?labelColor=0a0f1e&logo=python&logoColor=c5d8f0)
+![Python](https://img.shields.io/badge/PYTHON-3.13+-3776AB?labelColor=0a0f1e&logo=python&logoColor=c5d8f0)
 ![Status](https://img.shields.io/badge/STATUS-OPERACIONAL-52be80?logo=startrek&labelColor=0a0f1e&logoColor=c5d8f0)
 ![Fase](https://img.shields.io/badge/FASE-3-c5d8f0?labelColor=0a0f1e&logoColor=c5d8f0)
 
-> A Aurora Siger entrou em operação contínua.
-> O desafio agora não é sobreviver — é manter a colônia funcionando de forma autônoma,
-> estável e eficiente, sol após sol, mesmo quando Marte não coopera.
+*Atividade Integradora · Fase 3 · Ciência da Computação, 2026 — FIAP*
+
+🧑‍🚀 [Julia Ramos | RM568988](https://www.linkedin.com/in/juliaramosguedes)
+
+---
+
+![Módulos](https://img.shields.io/badge/MÓDULOS-8-5dade2?labelColor=0a0f1e&logo=nasa&logoColor=c5d8f0) ![Estágios](https://img.shields.io/badge/ESTÁGIOS-4-a569bd?labelColor=0a0f1e&logo=alienware&logoColor=c5d8f0) ![Algoritmos](https://img.shields.io/badge/ALGORITMOS-4-FFE200?labelColor=0a0f1e&logo=anthropic&logoColor=c5d8f0) ![Modelos](https://img.shields.io/badge/MODELOS_FÍSICOS-4-52be80?labelColor=0a0f1e&logo=spacex&logoColor=c5d8f0)
+
+MGAB — Módulo de Gerenciamento Autônomo de Base. A Aurora Siger entrou em operação contínua. A cada meio-sol marciano, o sistema calcula geração solar e eólica, monitora o consumo dos oito módulos ativos, prevê tendências de deterioração por regressão linear e toma decisões autônomas — desligando módulos não-essenciais quando a bateria entra em colapso e reativando-os em ordem inversa assim que o balanço se recupera.
+
+> [!IMPORTANT]
+> O desafio não é sobreviver — é manter a colônia funcionando de forma autônoma, estável e eficiente, sol após sol, mesmo quando Marte não coopera. Nenhuma intervenção humana é necessária para transitar entre os quatro estágios operacionais.
+
+> [!CAUTION]
+> Em `--stress`, uma tempestade global envolve a colônia desde o ciclo 1. Noites sem vento drenam a bateria antes do amanhecer. **Resistência é inútil.**
+
+---
+
+## 🛸 Pipeline
+
+```
+Cenário → Ambiente (dia/noite · vento · tempestade) → Anomalia opcional → Energia (solar + eólica − consumo) → Bateria → Regressão Welford → Decisão (4 estágios) → Relatório
+```
+
+```mermaid
+flowchart TD
+    A([🌅 CICLO INICIA]) --> B[Avança ciclo\nDIA ↔ NOITE]
+    B --> C[Atualiza ambiente\nvento · solar · tempestade]
+    C --> D{Anomalia?}
+    D -->|Probabilística| E[Injeta anomalia\ntempestade · falha · sensor]
+    D -->|Nenhuma| F[Calcula energia\nsolar + eólica]
+    E --> F
+    F --> G[Atualiza bateria\nbalanço × Δt]
+    G --> H[Welford O(1)\nvento→geração · ciclo→balanço]
+    H --> I{Estágio operacional?}
+    I -->|bateria ≤ mínimo\nou balanço crítico| L([☄️ CRÍTICO\nDesliga módulo menor prioridade])
+    I -->|previsão deteriorando| K([⚠ ALERTA\nMonitoramento intensificado])
+    I -->|bateria recuperada| M([✔ RECUPERANDO\nReativa módulo LIFO])
+    I -->|tudo nominal| J([⚡ OPERACIONAL])
+    J --> N[Exibe relatório do ciclo]
+    K --> N
+    L --> N
+    M --> N
+
+    style A fill:#1a1a2e,color:#fff,stroke:#4a90d9
+    style B fill:#16213e,color:#fff,stroke:#4a90d9
+    style C fill:#16213e,color:#fff,stroke:#4a90d9
+    style D fill:#1a2040,color:#fff,stroke:#4a90d9
+    style E fill:#3d1500,color:#fff,stroke:#f39c12
+    style F fill:#16213e,color:#fff,stroke:#4a90d9
+    style G fill:#16213e,color:#fff,stroke:#4a90d9
+    style H fill:#16213e,color:#fff,stroke:#4a90d9
+    style I fill:#1a2040,color:#fff,stroke:#4a90d9
+    style J fill:#0a3d0a,color:#fff,stroke:#2ecc71,stroke-width:3px
+    style K fill:#3d2200,color:#fff,stroke:#f39c12,stroke-width:3px
+    style L fill:#3d0a0a,color:#fff,stroke:#e74c3c,stroke-width:3px
+    style M fill:#0a3d0a,color:#fff,stroke:#2ecc71,stroke-width:3px
+    style N fill:#16213e,color:#fff,stroke:#4a90d9
+```
+
+---
+
+## 🛰 Arquitetura
+
+**Funções puras** — sem efeitos colaterais; mesmo input sempre produz mesmo output. Cada estágio de decisão é testável individualmente — mandatório em sistemas de segurança crítica.
+
+**Fonte única da verdade** — todos os limiares numéricos definidos uma vez em `src/constants.py`; reutilizados em energia, decisão e relatórios. Nenhum magic number no código.
+
+**Separação estrita por responsabilidade** — `energy.py` calcula; `decision.py` decide; `report.py` exibe. Nenhum módulo conhece o funcionamento interno do outro.
+
+**Regressão online** — Welford incremental: O(1) por ciclo, O(1) memória. Sem armazenamento de histórico — compatível com hardware embarcado de memória limitada.
+
+**Seed fixo** — `RANDOM_SEED = 42` em `constants.py` garante reprodutibilidade total. Toda simulação é determinística e auditável — o mesmo cenário sempre produz o mesmo resultado.
 
 ---
 
@@ -99,35 +169,51 @@ A segunda turbina e a segunda bateria são redundância operacional — tolerân
 
 ---
 
-## Como funciona
+## 📡 Modelos Matemáticos
 
-A cada ciclo (meio-sol marciano ≈ 12h):
-
-```
-1. Avança o ciclo (dia ↔ noite)
-2. Atualiza o ambiente (variação ou tempestade persistente)
-3. Injeta anomalia (se configurado)
-4. Calcula geração solar e eólica
-5. Calcula consumo total (46 kW — todos os módulos ativos)
-6. Atualiza bateria (carga ou descarga)
-7. Atualiza regressões lineares (Welford incremental)
-8. Determina estágio operacional
-9. Executa ação (desliga módulo ou reativa)
-10. Exibe relatório do ciclo
-```
-
-### Regressão linear para previsão
-
-Duas regressões (Welford, O(1) por atualização):
-- `vento → geração eólica`: relação física
-- `ciclo → balanço energético`: tendência operacional
-
-Quando a tendência prevê cruzamento do limiar de alerta nos próximos 6 ciclos,
-o sistema emite alerta preditivo antes de qualquer falha real.
+| Fenômeno | Modelo | Tipo | Variável alimentada |
+|---|---|---|---|
+| Geração solar com poeira | `P = I × A × η × (1 − d)` | Linear | `solar_generation_kw` |
+| Geração eólica (lei de Betz) | `P = ½ × ρ × Cp × A × v³` para `v ≥ v_cut` | Cúbica | `wind_generation_kw` |
+| Atualização da bateria | `B(t) = clamp(B(t−1) + balanço × Δt, B_min, B_max)` | Linear | `battery_reserve_kwh` |
+| Regressão linear (Welford) | `slope = C / S_xx`, `intercept = ȳ − slope × x̄` | Incremental O(1) | `cycle_to_balance`, `wind_to_generation` |
 
 ---
 
-## Como executar
+## 🌙 Estruturas de Dados
+
+| Estrutura | Tipo | Papel |
+|---|---|---|
+| `alert_queue` | `deque[AlertEntry]` — FIFO | Hub de entrada de alertas por ciclo; nenhum alerta é descartado |
+| `shutdown_stack` | `list[str]` — LIFO | Pilha de desligamentos para recuperação na ordem inversa |
+| `energy_history` | `list[float]` — append-only | Histórico de balanço energético por ciclo — base do relatório final |
+| `wind_history` | `list[float]` — append-only | Histórico de velocidade do vento por ciclo |
+| `dust_history` | `list[float]` — append-only | Histórico de acumulação de poeira nos painéis |
+| `OnlineRegression` | dataclass (estado Welford) | Acumuladores de regressão linear incremental — sem histórico armazenado |
+
+---
+
+## ⭐ Algoritmos
+
+| Algoritmo | Uso | Complexidade | Justificativa |
+|---|---|---|---|
+| Welford incremental | Regressão linear online | O(1) por ciclo, O(1) memória | Sem armazenamento de histórico — compatível com hardware embarcado de memória limitada |
+| Priority sort | Seleção do módulo a desligar | O(n log n) | Ordenação reversa por prioridade — garante que o menos crítico desliga primeiro |
+| LIFO recovery | Reativação de módulos | O(1) | Lista como pilha — desfaz desligamentos na ordem inversa exata |
+| Threshold extrapolation | Previsão de cruzamento de limiar | O(1) | Álgebra direta sobre os coeficientes: `ciclo_cruzamento = (limiar − b) / slope` |
+
+---
+
+## 🚀 Como executar
+
+Sem dependências externas. Biblioteca padrão Python 3.13+.
+
+| Argumento | Tipo | Default | Descrição |
+|---|---|---|---|
+| `--cycles` | inteiro | `48` | Número de ciclos a simular (cada ciclo ≈ meio sol marciano ≈ 12h) |
+| `--random` | flag | ausente | Condições iniciais aleatórias dentro dos limites marcianos reais |
+| `--anomaly` | decimal 0–1 | `0.0` | Probabilidade de anomalia por ciclo — tempestade, falha de equipamento ou erro de sensor |
+| `--stress` | flag | ausente | Força tempestade global desde o ciclo 1 com anomalias em 15% dos ciclos. Default automático: 200 ciclos |
 
 ```bash
 python main.py                              # cenário padrão, 48 ciclos
@@ -137,17 +223,10 @@ python main.py --anomaly 0.3               # 30% de chance de anomalia por ciclo
 python main.py --random --anomaly 0.4      # aleatório com anomalias frequentes
 python main.py --stress                    # tempestade global forçada, 200 ciclos
 python main.py --stress --cycles 400       # tempestade global longa
-python main.py --seed 42                   # semente para reprodutibilidade
 ```
 
-> [!CAUTION]
-> Em `--stress`, uma tempestade global envolve a colônia desde o ciclo 1.
-> Noites sem vento drenam a bateria antes do amanhecer.
-> Resistência é inútil.
-
-> [!IMPORTANT]
-> O projeto não usa bibliotecas externas. Apenas Python 3.9+ padrão.
-> Nenhuma instalação adicional necessária.
+> [!NOTE]
+> O projeto não usa bibliotecas externas. Apenas Python 3.13+ padrão. Nenhuma instalação adicional necessária. Seed fixo `42` garante que toda simulação é reprodutível e auditável.
 
 ---
 
@@ -172,16 +251,66 @@ python main.py --seed 42                   # semente para reprodutibilidade
 
 ---
 
+## 🌌 Estrutura
+
+```
+fiap_fase_3_aurora_siger/
+├── main.py                  ← entry point — CLI args, seed fixo, cenário
+├── ENGINEERING_GUIDE.md     ← walkthrough técnico completo para engenheiros
+├── src/
+│   ├── constants.py         ← constantes físicas, limiares e controle de simulação
+│   ├── enums.py             ← SystemStatus, AlertType, AnomalyType, ModuleName
+│   ├── models.py            ← ColonyState, EnergyState, AlertEntry (TypedDict)
+│   ├── alerts.py            ← enqueue_alert — fila de alertas tipada
+│   ├── energy.py            ← modelos solar (irradiância) e eólico (Betz)
+│   ├── forecast.py          ← regressão Welford incremental — O(1)
+│   ├── decision.py          ← 4 estágios · desligamento por prioridade · manutenção
+│   ├── scenarios.py         ← default_scenario(), random_scenario()
+│   ├── simulation.py        ← run_simulation() · ambiente · injeção de anomalias
+│   └── report.py            ← display_cycle_report(), display_final_report()
+└── docs/
+    ├── crew-and-energy-rationale.md
+    ├── energy-reference.md
+    ├── environment-reference.md
+    ├── modules-reference.md
+    └── thresholds-reference.md
+```
+
+---
+
 ## Critérios da atividade atendidos
 
 | Critério | Implementação |
 |---|---|
-| Estruturação de dados | `ColonyState` hierárquico, `deque` para alertas FIFO, dicionários de enumeração |
+| Estruturação de dados | `ColonyState` hierárquico, `deque` para alertas FIFO, pilha LIFO para recuperação, dicionários de enumeração |
 | Lógica de decisão | 4 estágios com condições explícitas, desligamento por prioridade, recuperação LIFO |
-| Modelagem e previsão | Fórmulas físicas reais (Betz, solar); regressão Welford com previsão de limiar |
+| Modelagem e previsão | Fórmulas físicas reais (Betz, irradiância solar); regressão Welford com previsão de cruzamento de limiar |
 | Implementação Python | Funções puras, separação por módulo, sem bibliotecas externas |
 | Documentação | README, ENGINEERING_GUIDE, `docs/`, constantes com fonte inline |
 
 ---
 
-🧑‍🚀 Julia Ramos | RM568988 | FIAP — Ciência da Computação
+## 🔭 Referências
+
+| Parâmetro | Fonte |
+|---|---|
+| Top-3 locais eólicos de Marte; 24 kW nos melhores locais | Hartwick et al. — *Nature Astronomy* (2023) |
+| Composição da tripulação de 6 pessoas (DRA 5.0) | Drake — *NASA DRA 5.0* (2009) |
+| Suporte de vida controlado automaticamente | *CELSS Study* — NIH (2019) |
+| Automação ECLSS reduz tempo de manutenção regular | NASA ECLSS — NTRS 20230002103 |
+| ISRU: modos de operação 24h e 8h (energia-driven) | *Space S&T* (2021) |
+| Painel solar 29% eficiência; bateria 312 kWh × 2 | arXiv:2410.00066 |
+| Vento noturno usualmente abaixo do cut-in (Viking Lander) | NASA — NTRS 19790057281 |
+| Duração de tempestades regionais marcianas: 6–56 ciclos | *ScienceDirect* (2022) |
+| Regressão linear incremental O(1) | Welford — *Technometrics* (1962) |
+| Range de velocidade do vento marciano | NASA Planetary Data System — Viking Lander |
+
+> [!NOTE]
+> Consulte [`docs/thresholds-reference.md`](docs/thresholds-reference.md) para as justificativas completas dos limiares numéricos e [`docs/energy-reference.md`](docs/energy-reference.md) para os cálculos de geração.
+
+---
+
+> [!IMPORTANT]
+> *"A lógica é o começo da sabedoria, não o fim."* 🖖
+
+🧑‍🚀 [Julia Ramos | RM568988](https://www.linkedin.com/in/juliaramosguedes) · FIAP — Ciência da Computação

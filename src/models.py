@@ -8,13 +8,14 @@ because they are replaced wholesale each cycle, not patched in place.
 OnlineRegression accumulates incrementally and is intentionally mutable.
 """
 
-import math
+from __future__ import annotations
+
 from collections import deque
 from dataclasses import dataclass, field
 from typing import TypedDict
 
-from src.constants import MARS_SURFACE_IRRADIANCE_WM2, WIND_SPEED_SENSOR_FALLBACK_MS
-from src.enums import AlertType, SystemStatus
+from .constants import MARS_SURFACE_IRRADIANCE_WM2, WIND_SPEED_SENSOR_FALLBACK_MS
+from .enums import AlertType, SystemStatus
 
 
 @dataclass

@@ -24,9 +24,11 @@ Dust storm model:
   (NASA NTRS 19790057281: nighttime conditions usually quiet).
 """
 
+from __future__ import annotations
+
 import random
 
-from src.constants import (
+from .constants import (
     DUST_STORM_MAX_DURATION_CYCLES,
     DUST_STORM_MIN_DURATION_CYCLES,
     MARS_SURFACE_IRRADIANCE_WM2,
@@ -41,16 +43,16 @@ from src.constants import (
     STORM_WIND_NIGHT_MAX_FACTOR,
     WIND_CALM_UPPER_MS,
 )
-from src.decision import (
+from .decision import (
     apply_anomaly_equipment_failure,
     apply_anomaly_sensor_error,
     apply_decision,
 )
-from src.energy import update_energy_state
-from src.enums import AnomalyType
-from src.forecast import update_forecast
-from src.models import ColonyState
-from src.report import display_cycle_report, display_final_report
+from .energy import update_energy_state
+from .enums import AnomalyType
+from .forecast import update_forecast
+from .models import ColonyState
+from .report import display_cycle_report, display_final_report
 
 
 def _update_environment(state: ColonyState) -> None:

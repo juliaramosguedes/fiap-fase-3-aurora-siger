@@ -15,14 +15,14 @@ Status badges map directly to SystemStatus enum values.
 Frases de sucesso/falha from GUIA_ESTILO_AURORA_SIGER.md.
 """
 
+from __future__ import annotations
+
 from collections import deque
 
-from src.constants import BATTERY_TOTAL_CAPACITY_KWH, FORECAST_MIN_CYCLES
-from src.enums import SystemStatus
-from src.forecast import is_regression_reliable
-from src.models import ColonyState
-
-SEPARATOR = "=" * 65
+from .constants import BATTERY_TOTAL_CAPACITY_KWH, FORECAST_MIN_CYCLES, SEPARATOR
+from .enums import SystemStatus
+from .forecast import is_regression_reliable
+from .models import ColonyState
 
 
 # ---------------------------------------------------------------------------

@@ -20,7 +20,9 @@ Formula note — wind generation per turbine:
   Nominal at 15 m/s: ~8.8 kW/turbine x 2 turbines = 17.6 kW
 """
 
-from src.constants import (
+from __future__ import annotations
+
+from .constants import (
     BATTERY_MIN_KWH,
     BATTERY_TOTAL_CAPACITY_KWH,
     MARS_AIR_DENSITY_KGM3,
@@ -38,9 +40,9 @@ from src.constants import (
     WIND_TURBINE_EFFICIENCY,
     WIND_TURBINE_SWEPT_AREA_M2,
 )
-from src.alerts import enqueue_alert
-from src.enums import AlertType
-from src.models import ColonyState
+from .alerts import enqueue_alert
+from .enums import AlertType
+from .models import ColonyState
 
 
 # ---------------------------------------------------------------------------

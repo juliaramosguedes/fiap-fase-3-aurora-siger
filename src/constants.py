@@ -31,7 +31,19 @@ Source note on wind at night:
   offline at night, making battery the primary nocturnal energy source.
 """
 
+from __future__ import annotations
+
 import math
+
+# ---------------------------------------------------------------------------
+# Simulation control
+# ---------------------------------------------------------------------------
+
+RANDOM_SEED: int = 42
+# Fixed seed for reproducibility — ensures deterministic output across runs
+
+SEPARATOR: str = "=" * 65
+# Terminal output separator — shared across all display functions
 
 # ---------------------------------------------------------------------------
 # Colony configuration
