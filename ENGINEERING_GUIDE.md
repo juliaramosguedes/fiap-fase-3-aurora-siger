@@ -13,7 +13,8 @@ fiap-fase-3-aurora-siger/
 ├── src/
 │   ├── constants.py     — única fonte de verdade para todas as constantes
 │   ├── enums.py         — enumerações do domínio
-│   ├── models.py        — dataclasses de estado
+│   ├── models.py        — dataclasses de estado + AlertEntry TypedDict
+│   ├── alerts.py        — enqueue_alert (fila de alertas tipada)
 │   ├── scenarios.py     — inicialização do ColonyState
 │   ├── energy.py        — cálculo de geração, consumo e bateria
 │   ├── forecast.py      — regressão linear online (Welford)
@@ -49,10 +50,11 @@ class ColonyState:
     energy_history: list[float]
     wind_history: list[float]
     dust_history: list[float]
-    alert_queue: deque                    # FIFO — alertas em ordem de chegada
+    alert_queue: deque[AlertEntry]        # FIFO — alertas em ordem de chegada
     active_storm_cycles_remaining: int   # > 0 = tempestade ativa
     last_valid_solar_irradiance_wm2: float
     last_valid_wind_speed_ms: float
+    shutdown_stack: list[str]            # LIFO — ordem inversa para recovery
 ```
 
 `is_daytime` controla exclusivamente a geração solar (solar = 0 à noite).
@@ -60,8 +62,8 @@ Não é usado para ligar/desligar módulos — todos os módulos operam 24h.
 Fonte: CELSS (NIH, 2019): "life support systems were controlled automatically";
 NASA ECLSS (NTRS 20230002103): "automation to reduce regular maintenance time".
 
-`_energy_shutdown_stack` é adicionado dinamicamente quando o primeiro desligamento
-por energia ocorre. Lista usada como pilha LIFO para recovery na ordem inversa.
+`shutdown_stack` é uma pilha LIFO declarada em `ColonyState`. Cada desligamento
+empilha o nome do módulo; cada ciclo de recovery desempilha e reativa o topo.
 
 ### EnergyState
 

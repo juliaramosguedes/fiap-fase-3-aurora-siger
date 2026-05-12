@@ -1,29 +1,3 @@
-"""
-Simulation loop for the MGAB — Autonomous Base Management Module.
-
-Orchestrates one full simulation run:
-  For each cycle:
-    1. Advance time (cycle counter, day/night toggle)
-    2. Update environment (variation or persistent storm)
-    3. Optionally inject anomaly
-    4. Update energy state
-    5. Update forecast regressions
-    6. Apply decision logic
-    7. Report cycle state
-
-No day/night module schedule — all modules operate continuously (24h).
-Night energy deficit is purely physics-driven:
-  - E33 offline when wind < cut-in (10.3 m/s) — common at night
-  - Solar = 0 at night
-  - Battery covers deficit; CRITICAL if depleted before dawn
-
-Dust storm model:
-  Regional storms last 6-56 cycles (ScienceDirect, 2022).
-  During storm: solar irradiance reduced, wind elevated during day,
-  wind can drop below cut-in at night even during storms
-  (NASA NTRS 19790057281: nighttime conditions usually quiet).
-"""
-
 from __future__ import annotations
 
 import random
@@ -56,12 +30,7 @@ from .report import display_cycle_report, display_final_report
 
 
 def _update_environment(state: ColonyState) -> None:
-    """
-    Apply environmental variation for the current cycle.
-
-    Storm active: solar reduced, daytime wind elevated, night wind can drop below cut-in.
-    No storm: mild variation; night wind biased toward quiet (Viking Lander observations).
-    """
+    """Apply environmental variation for the current cycle — storm or mild variation."""
     if state.active_storm_cycles_remaining > 0:
         intensity = state.environment.dust_storm_intensity
 
@@ -127,13 +96,7 @@ def _update_environment(state: ColonyState) -> None:
 
 
 def inject_anomaly(state: ColonyState, anomaly_probability: float) -> None:
-    """
-    Randomly inject an anomaly this cycle.
-
-    DUST_STORM: sets duration (6-56 cycles) and intensity. No reset if already active.
-    EQUIPMENT_FAILURE: increases one module's consumption by 30%.
-    SENSOR_ERROR: sets wind or solar sensor to None for one cycle.
-    """
+    """Randomly inject one anomaly this cycle: dust storm, equipment failure, or sensor error."""
     if random.random() > anomaly_probability:
         return
 

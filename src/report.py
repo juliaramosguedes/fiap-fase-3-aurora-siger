@@ -1,20 +1,3 @@
-"""
-Report module for the MGAB — Autonomous Base Management Module.
-
-Handles all terminal output. No logic lives here — only formatting.
-
-Emoji map (from GUIA_ESTILO_AURORA_SIGER.md — fixed palette):
-  🛰  colony state / sensors
-  ⚡  energy generation and balance
-  ☄️  decision logic / critical
-  📡  forecast / regression
-  🌙  alert queue / maintenance
-  🖖  final report (used once, at the end)
-
-Status badges map directly to SystemStatus enum values.
-Frases de sucesso/falha from GUIA_ESTILO_AURORA_SIGER.md.
-"""
-
 from __future__ import annotations
 
 from collections import deque

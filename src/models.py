@@ -1,13 +1,3 @@
-"""
-Data models for the MGAB — Autonomous Base Management Module.
-
-All domain state is represented here as dataclasses.
-ColonyState is mutable (evolves each cycle by design).
-Sub-states (EnvironmentReading, EnergyState) are also mutable
-because they are replaced wholesale each cycle, not patched in place.
-OnlineRegression accumulates incrementally and is intentionally mutable.
-"""
-
 from __future__ import annotations
 
 from collections import deque
@@ -60,12 +50,7 @@ class EnergyState:
 
 @dataclass
 class OnlineRegression:
-    """
-    Welford incremental linear regression. O(1) per update.
-
-    Maintains running statistics to compute slope and intercept
-    without storing the full history of observations.
-    """
+    """Welford incremental linear regression state. O(1) per update, O(1) memory."""
 
     count: int = 0
     mean_independent: float = 0.0
@@ -116,16 +101,10 @@ class AlertEntry(TypedDict):
 
 @dataclass
 class ColonyState:
-    """
-    Complete colony state for one simulation cycle.
-
-    Mutable by design: state evolves incrementally across cycles.
-    Each cycle produces a new EnvironmentReading and updated EnergyState;
-    the rest accumulates over the full simulation run.
-    """
+    """Complete colony state, evolving incrementally across simulation cycles."""
 
     cycle: int
-    is_daytime: bool              # True = solar active; False = night, non-essential modules off
+    is_daytime: bool              # True = solar generation active; False = no solar input
     environment: EnvironmentReading
     energy: EnergyState
     modules: list[Module]

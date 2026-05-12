@@ -1,38 +1,3 @@
-"""
-Decision logic for the MGAB — Autonomous Base Management Module.
-
-Implements four operational stages. No day/night schedule — all modules
-operate continuously. The E33 going offline at night (wind < cut-in) is
-what creates nocturnal energy deficits; the battery covers them when possible.
-
-Stage 0 — OPERATIONAL:
-  balance_kw >= ENERGY_ALERT_THRESHOLD and no deteriorating trend.
-  Battery charges automatically when balance > 0.
-
-Stage 1 — ALERT (predictive):
-  balance_kw >= ENERGY_ALERT_THRESHOLD BUT regression forecasts a crossing
-  within FORECAST_HORIZON_CYCLES. No module is shut down — early warning only.
-
-Stage 2 — CRITICAL (automatic action):
-  battery <= BATTERY_MIN_KWH.
-  Modules shut down in reverse priority order (8 -> 1). LSS-01 never shuts down.
-
-Recovery — RECOVERING:
-  battery > BATTERY_MIN_KWH after Stage 2.
-  Modules reactivated one per cycle in reverse shutdown order (LIFO).
-
-Night energy behavior (no schedule — purely physics-driven):
-  E33 cut-in: 10.3 m/s. NASA NTRS 19790057281: nights usually quiet.
-  70% of nights: E33 offline -> balance -46 kW -> battery drains 10.9h -> CRITICAL.
-  30% of nights: E33 online -> balance -26 kW -> battery drains 19.2h -> OK.
-  Daytime solar recharges battery the next morning.
-
-Maintenance:
-  Solar: blocked during active storm; probabilistic otherwise.
-  Wind: probabilistic each cycle.
-  Equipment failure: immediate for priority 1-3; probabilistic for others.
-"""
-
 from __future__ import annotations
 
 import random
@@ -56,21 +21,12 @@ from .models import ColonyState, Module
 
 
 def determine_stage(state: ColonyState) -> SystemStatus:
-    """
-    Determine the current operational stage.
-
-    CRITICAL is triggered only by battery depletion — not by negative balance alone.
-    Negative balance at night is expected and handled by the battery.
-    ALERT is triggered by negative daytime balance or deteriorating forecast.
-    Does not mutate state.
-    """
+    """Determine operational stage. CRITICAL triggers on battery depletion only — not on negative balance alone."""
     energy = state.energy
 
-    # Battery depleted — CRITICAL regardless of time of day
     if energy.battery_reserve_kwh <= BATTERY_MIN_KWH:
         return SystemStatus.CRITICAL
 
-    # Daytime: check balance threshold and forecast
     if state.is_daytime:
         if energy.balance_kw < ENERGY_CRITICAL_THRESHOLD_KW:
             return SystemStatus.CRITICAL
@@ -85,7 +41,6 @@ def determine_stage(state: ColonyState) -> SystemStatus:
         ):
             return SystemStatus.ALERT
 
-    # Was recovering and still stable
     if state.status == SystemStatus.RECOVERING:
         return SystemStatus.RECOVERING
 
@@ -93,12 +48,7 @@ def determine_stage(state: ColonyState) -> SystemStatus:
 
 
 def shutdown_lowest_priority_module(state: ColonyState) -> bool:
-    """
-    Shut down the lowest-priority active module that is not LSS-01.
-
-    Returns True if a module was shut down, False if none available.
-    Tracks shutdown order in state.shutdown_stack for LIFO recovery.
-    """
+    """Shut down the lowest-priority active module (priority > 1). Returns True if a module was shut down."""
     candidates = [
         m for m in state.modules
         if m.active and m.priority > 1
@@ -120,11 +70,7 @@ def shutdown_lowest_priority_module(state: ColonyState) -> bool:
 
 
 def reactivate_one_module(state: ColonyState) -> bool:
-    """
-    Reactivate the most recently shut-down module (LIFO recovery).
-
-    Returns True if a module was reactivated, False if stack is empty.
-    """
+    """Reactivate the most recently shut-down module (LIFO). Returns True if a module was reactivated."""
     if not state.shutdown_stack:
         return False
 
@@ -143,14 +89,7 @@ def reactivate_one_module(state: ColonyState) -> bool:
 
 
 def apply_maintenance(state: ColonyState) -> None:
-    """
-    Apply maintenance actions for the current cycle.
-
-    Solar: blocked during active storm (physically impossible to clean panels);
-           automatic at critical threshold; probabilistic otherwise.
-    Wind: probabilistic each cycle.
-    Equipment failure: immediate for priority 1-3; probabilistic for others.
-    """
+    """Apply solar, wind, and equipment maintenance for the current cycle."""
     energy = state.energy
 
     # Solar panel cleaning — impossible during active dust storm
@@ -210,15 +149,7 @@ def apply_anomaly_sensor_error(state: ColonyState, sensor: str) -> None:
 
 
 def apply_decision(state: ColonyState) -> None:
-    """
-    Apply the decision logic for the current cycle.
-
-    Order:
-    1. Apply maintenance
-    2. Determine operational stage
-    3. Act: shutdown (Critical) or reactivate (Recovering)
-    4. Update state.status
-    """
+    """Apply maintenance, determine stage, execute action, and update state.status."""
     apply_maintenance(state)
 
     new_status = determine_stage(state)

@@ -1,31 +1,3 @@
-"""
-Scenarios for the MGAB — Autonomous Base Management Module.
-
-Each scenario function returns a fully initialized ColonyState.
-
-Colony location: top-3 wind sites from Hartwick et al., Nature Astronomy (2023).
-At these sites, E33 diurnal average wind power exceeds 24 kW at all simulated times.
-
-Colony crew composition (NASA DRA 5.0, Drake 2009):
-  1. Commander        -> COM-01 Communications
-  2. Pilot            -> LOG-01 Logistics (rovers, EVA)
-  3. Medical Officer  -> MED-01 Medical
-  4. Scientist        -> SCI-01 Science Lab
-  5. Engineer ECLSS   -> LSS-01 Life Support + HAB-01 Habitat (shared infrastructure)
-  6. Engineer Power   -> PWR-01 Power Systems + MIN-01 ISRU Mining (shared energy domain)
-
-Module operation model:
-  All 8 modules operate continuously (24h), totaling 46 kW.
-  Source: life support systems "controlled automatically" (CELSS study, NIH 2019);
-  NASA ECLSS (NTRS 20230002103): "automation to reduce regular maintenance time";
-  Space S&T (2021): ISRU can operate in 24h or 8h modes — energy-driven, not crew-driven.
-
-  Night energy deficit is covered by battery when E33 is offline (wind < cut-in).
-  E33 cut-in: 10.3 m/s. NASA NTRS 19790057281: "nighttime conditions usually very quiet."
-  70% of nights: E33 offline. Battery (499 kWh usable) covers 10.9h at 46 kW.
-  Without wind: CRITICAL before dawn. With wind: 19.2h autonomy. Realistic behavior.
-"""
-
 from __future__ import annotations
 
 import random
@@ -62,13 +34,7 @@ from .models import (
 
 
 def _build_default_modules() -> list[Module]:
-    """
-    Build the eight colony modules at nominal consumption, all active 24h.
-
-    Priority 1 = critical (never shuts down for energy reasons).
-    Higher number = first to shut down when battery is depleted.
-    All modules operate continuously — shutdown is energy-driven, not schedule-driven.
-    """
+    """Eight colony modules at nominal consumption, all active 24h. Shutdown is energy-driven."""
     return [
         Module(
             name=ModuleName.LIFE_SUPPORT.value,
@@ -138,13 +104,7 @@ def _build_default_modules() -> list[Module]:
 
 
 def default_scenario() -> ColonyState:
-    """
-    Fixed, deterministic starting conditions.
-
-    Starts at daytime cycle 0. Battery at full capacity.
-    Wind at 15 m/s — above E33 cut-in, realistic daytime value.
-    No dust accumulation, no blade abrasion, no anomalies.
-    """
+    """Fixed deterministic start: daytime, full battery, 15 m/s wind, no degradation."""
     modules = _build_default_modules()
     total_consumption_kw = sum(m.current_consumption_kw for m in modules)
 
@@ -187,13 +147,7 @@ def default_scenario() -> ColonyState:
 
 
 def random_scenario() -> ColonyState:
-    """
-    Randomized starting conditions within realistic Martian ranges.
-
-    Wind speed drawn from Martian range (Viking Lander data, NASA PDS).
-    Night wind biased toward quiet conditions (NASA NTRS 19790057281).
-    Battery starts between 50-100%; dust accumulation 0-20%.
-    """
+    """Randomized start within Martian ranges. Battery 50-100%, dust 0-20%, night wind biased quiet."""
     is_daytime = random.choice([True, False])
 
     if is_daytime:

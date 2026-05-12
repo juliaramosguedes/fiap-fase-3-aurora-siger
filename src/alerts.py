@@ -1,5 +1,3 @@
-"""Alert queue management for the MGAB — Autonomous Base Management Module."""
-
 from __future__ import annotations
 
 from .enums import AlertType
