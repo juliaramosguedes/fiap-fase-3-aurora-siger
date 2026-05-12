@@ -78,12 +78,12 @@ def display_cycle_report(state: ColonyState) -> None:
     battery_pct = energy.battery_reserve_kwh / BATTERY_TOTAL_CAPACITY_KWH * 100
 
     print(f"⚡  Energia")
-    print(f"   🔋 Bateria  [{_bar(energy.battery_reserve_kwh, BATTERY_TOTAL_CAPACITY_KWH)}]  {energy.battery_reserve_kwh:>7.1f} kWh  {battery_pct:>5.1f}%  ({_battery_status(energy.battery_reserve_kwh, battery_pct)})")
-    print(f"   ☀  Solar    [{_bar(energy.solar_generation_kw,    _SOLAR_MAX_KW)}]  {energy.solar_generation_kw:>7.1f} kW")
-    print(f"   💨 Eólica   [{_bar(energy.wind_generation_kw,     _WIND_MAX_KW)}]  {energy.wind_generation_kw:>7.1f} kW")
-    print(f"   🔌 Consumo  [{_bar(energy.total_consumption_kw,   _CONSUME_MAX_KW)}]  {energy.total_consumption_kw:>7.1f} kW  |  Balanço: {energy.balance_kw:>+8.1f} kW")
-    print(f"   🌫 Poeira   [{_bar(energy.solar_dust_accumulation, 1.0)}]  {energy.solar_dust_accumulation:>6.1%}")
-    print(f"   ⚙  Abrasão  [{_bar(energy.wind_blade_abrasion,    1.0)}]  {energy.wind_blade_abrasion:>6.1%}")
+    print(f"   {'Bateria':<8} [{_bar(energy.battery_reserve_kwh, BATTERY_TOTAL_CAPACITY_KWH)}]  {energy.battery_reserve_kwh:>7.1f} kWh  {battery_pct:>5.1f}%  ({_battery_status(energy.battery_reserve_kwh, battery_pct)})")
+    print(f"   {'Solar':<8} [{_bar(energy.solar_generation_kw,    _SOLAR_MAX_KW)}]  {energy.solar_generation_kw:>7.1f} kW")
+    print(f"   {'Eólica':<8} [{_bar(energy.wind_generation_kw,     _WIND_MAX_KW)}]  {energy.wind_generation_kw:>7.1f} kW")
+    print(f"   {'Consumo':<8} [{_bar(energy.total_consumption_kw,   _CONSUME_MAX_KW)}]  {energy.total_consumption_kw:>7.1f} kW  |  Balanço: {energy.balance_kw:>+8.1f} kW")
+    print(f"   {'Poeira':<8} [{_bar(energy.solar_dust_accumulation, 1.0)}]  {energy.solar_dust_accumulation:>6.1%}")
+    print(f"   {'Abrasão':<8} [{_bar(energy.wind_blade_abrasion,    1.0)}]  {energy.wind_blade_abrasion:>6.1%}")
 
     active_names   = [m.name for m in state.modules if m.active]
     inactive_names = [m.name for m in state.modules if not m.active]
@@ -126,9 +126,9 @@ def display_final_report(state: ColonyState) -> None:
 
     print(f"🛰  Ciclos simulados: {state.cycle}")
     print(f"   Status final: {state.status.value}")
-    print(f"   🔋 Bateria  [{_bar(state.energy.battery_reserve_kwh, BATTERY_TOTAL_CAPACITY_KWH)}]  {state.energy.battery_reserve_kwh:>7.1f} kWh  {battery_pct:>5.1f}%  ({_battery_status(state.energy.battery_reserve_kwh, battery_pct)})")
-    print(f"   🌫 Poeira   [{_bar(state.energy.solar_dust_accumulation, 1.0)}]  {state.energy.solar_dust_accumulation:>6.1%}")
-    print(f"   ⚙  Abrasão  [{_bar(state.energy.wind_blade_abrasion,    1.0)}]  {state.energy.wind_blade_abrasion:>6.1%}")
+    print(f"   {'Bateria':<8} [{_bar(state.energy.battery_reserve_kwh, BATTERY_TOTAL_CAPACITY_KWH)}]  {state.energy.battery_reserve_kwh:>7.1f} kWh  {battery_pct:>5.1f}%  ({_battery_status(state.energy.battery_reserve_kwh, battery_pct)})")
+    print(f"   {'Poeira':<8} [{_bar(state.energy.solar_dust_accumulation, 1.0)}]  {state.energy.solar_dust_accumulation:>6.1%}")
+    print(f"   {'Abrasão':<8} [{_bar(state.energy.wind_blade_abrasion,    1.0)}]  {state.energy.wind_blade_abrasion:>6.1%}")
 
     if state.energy_history:
         avg_balance = sum(state.energy_history) / len(state.energy_history)
