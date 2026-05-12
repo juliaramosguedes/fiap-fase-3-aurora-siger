@@ -1,22 +1,3 @@
-"""
-MGAB — Módulo de Gerenciamento Autônomo de Base
-Aurora Siger · FIAP — Ciência da Computação
-
-Sistema de simulação do gerenciamento energético autônomo da colônia Aurora Siger.
-Modela geração solar e eólica, consumo por módulo, ciclo dia/noite marciano,
-regressão linear online para previsão, e lógica de decisão em quatro estágios.
-
-Usage:
-    python main.py                              # cenário default, 48 ciclos
-    python main.py --cycles 96                 # número de ciclos customizado
-    python main.py --random                    # cenário aleatório
-    python main.py --random --cycles 72        # cenário aleatório, 72 ciclos
-    python main.py --anomaly 0.3               # 30% de chance de anomalia por ciclo
-    python main.py --random --anomaly 0.4      # aleatório com anomalias frequentes
-    python main.py --stress                    # tempestade global forçada (200 ciclos)
-    python main.py --stress --cycles 400       # tempestade global longa
-"""
-
 import argparse
 import random
 
@@ -61,14 +42,7 @@ def _parse_args() -> argparse.Namespace:
 
 
 def _apply_stress_mode(state: ColonyState, cycles: int) -> None:
-    """
-    Force a global dust storm from cycle 1, lasting the full simulation.
-
-    Models a Mars global dust storm (weeks to months).
-    Source: ScienceDirect (2024) — global storms last weeks to months.
-    Maintenance is not disabled — crew still attempts repairs, but
-    storm prevents solar panel cleaning, so dust accumulates continuously.
-    """
+    """Force a global dust storm lasting the full simulation. Source: ScienceDirect (2024)."""
     intensity = random.uniform(0.7, 1.0)
     state.environment.dust_storm_intensity = intensity
     state.active_storm_cycles_remaining = cycles

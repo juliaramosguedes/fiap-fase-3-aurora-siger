@@ -6,7 +6,7 @@
 
 *Atividade Integradora · Fase 3 · Ciência da Computação, 2026 — FIAP*
 
-🧑‍🚀 [Julia Ramos | RM568988](https://www.linkedin.com/in/juliaramosguedes) · [Matheus Fuchelberguer | RM569113](https://www.linkedin.com/in/matheus-fuchelberguer-neves/) · [Julio Joaquim | RM571321](https://github.com/jojigoats)
+🧑‍🚀 [Julia Ramos | RM568988](https://www.linkedin.com/in/juliaramosguedes) · [Matheus Fuchelberguer | RM569113](https://www.linkedin.com/in/matheus-fuchelberguer-neves/) · [Julio Joaquim | RM571321](https://github.com/jojigoats) · [Carlos Eugenio | RM570285](https://www.linkedin.com/in/carloseugenioandrade/)
 
 ---
 
@@ -406,11 +406,10 @@ fiap_fase_3_aurora_siger/
 | Range de velocidade do vento marciano | NASA Planetary Data System — Viking Lander |
 
 > [!NOTE]
-> Consulte [`docs/thresholds-reference.md`](docs/thresholds-reference.md) para as justificativas completas dos limiares numéricos e [`docs/energy-reference.md`](docs/energy-reference.md) para os cálculos de geração.
+> Consulte [`docs/energy-reference.md`](docs/energy-reference.md) para os limiares energéticos, [`docs/environment-reference.md`](docs/environment-reference.md) para os modelos ambientais e [`docs/modules-reference.md`](docs/modules-reference.md) para o consumo dos módulos.
 
 ---
 
 > [!IMPORTANT]
 > *"A lógica é o começo da sabedoria, não o fim."* 🖖
 
-🧑‍🚀 [Julia Ramos | RM568988](https://www.linkedin.com/in/juliaramosguedes) · [Matheus Fuchelberguer | RM569113](https://www.linkedin.com/in/matheus-fuchelberguer-neves/) · [Julio Joaquim | RM571321](https://github.com/jojigoats) · FIAP — Ciência da Computação

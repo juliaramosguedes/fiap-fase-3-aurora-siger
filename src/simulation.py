@@ -40,15 +40,12 @@ def _update_environment(state: ColonyState) -> None:
                 MARS_SURFACE_IRRADIANCE_WM2 * STORM_SOLAR_RESIDUAL_FACTOR,
                 MARS_SURFACE_IRRADIANCE_WM2 * (1.0 - reduction),
             )
-            # Daytime storm: wind elevated but varies
             state.environment.wind_speed_ms = random.uniform(
                 MARS_WIND_STORM_MIN_MS,
                 MARS_WIND_SPEED_MAX_MS * STORM_WIND_DAY_MAX_FACTOR,
             )
         else:
             state.environment.solar_irradiance_wm2 = None
-            # Night during storm: can still drop below cut-in
-            # NASA NTRS 19790057281: nighttime quiet even in storm season
             if random.random() < STORM_NIGHT_QUIET_PROBABILITY:
                 state.environment.wind_speed_ms = random.uniform(
                     MARS_WIND_SPEED_MIN_MS,
@@ -66,13 +63,11 @@ def _update_environment(state: ColonyState) -> None:
         state.environment.dust_storm_intensity = 0.0
 
         if state.is_daytime:
-            # Daytime: mild wind variation
             if state.environment.wind_speed_ms is not None:
                 new_wind = state.environment.wind_speed_ms + random.uniform(-2.0, 2.0)
                 state.environment.wind_speed_ms = max(
                     MARS_WIND_SPEED_MIN_MS, min(MARS_WIND_SPEED_MAX_MS, new_wind)
                 )
-            # Solar: mild irradiance variation
             base = state.last_valid_solar_irradiance_wm2
             new_irr = base + random.uniform(-20.0, 20.0)
             state.environment.solar_irradiance_wm2 = max(
@@ -124,11 +119,7 @@ def run_simulation(
     cycles: int,
     anomaly_probability: float = 0.0,
 ) -> None:
-    """
-    Run the full simulation for the given number of cycles.
-
-    Each cycle represents one half-sol (~12 h), alternating day and night.
-    """
+    """Run the full simulation. Each cycle = one half-sol (~12 h), alternating day and night."""
     for _ in range(cycles):
         state.cycle += 1
         state.is_daytime = not state.is_daytime

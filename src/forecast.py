@@ -49,9 +49,8 @@ def cycles_until_threshold_crossed(
         return None
 
     if slope >= 0:
-        return None  # trend is stable or improving
+        return None
 
-    # Solve: intercept + slope * cycle = threshold_kw
     crossing_cycle = (threshold_kw - intercept) / slope
     remaining = crossing_cycle - current_cycle
 
@@ -77,7 +76,7 @@ def update_forecast(state: ColonyState) -> None:
     """Feed current cycle observations into wind_to_generation and cycle_to_balance regressions."""
     energy = state.energy
 
-    wind_speed = state.last_valid_wind_speed_ms  # already resolved in energy.py
+    wind_speed = state.last_valid_wind_speed_ms
 
     update_regression(
         state.forecast.wind_to_generation,
