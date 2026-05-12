@@ -1,16 +1,16 @@
 from __future__ import annotations
 
-from collections import deque
-
-from .constants import BATTERY_TOTAL_CAPACITY_KWH, FORECAST_MIN_CYCLES, SEPARATOR
+from .constants import BATTERY_MIN_KWH, BATTERY_TOTAL_CAPACITY_KWH, FORECAST_MIN_CYCLES, SEPARATOR
 from .enums import SystemStatus
 from .forecast import is_regression_reliable
 from .models import ColonyState
 
 
-# ---------------------------------------------------------------------------
-# Status phrases (GUIA_ESTILO_AURORA_SIGER.md)
-# ---------------------------------------------------------------------------
+_BAR_WIDTH      = 20
+_SOLAR_MAX_KW   = 145.0
+_WIND_MAX_KW    = 50.0
+_CONSUME_MAX_KW = 46.0
+
 
 STATUS_PHRASES = {
     SystemStatus.OPERATIONAL: "Sistemas nominais. Missão em curso.",
@@ -34,6 +34,22 @@ STATUS_EMOJI = {
 }
 
 
+def _bar(value: float, max_value: float) -> str:
+    ratio  = min(1.0, max(0.0, value / max_value)) if max_value > 0 else 0.0
+    filled = round(ratio * _BAR_WIDTH)
+    return "█" * filled + "░" * (_BAR_WIDTH - filled)
+
+
+def _battery_status(reserve_kwh: float, pct: float) -> str:
+    return next(
+        (tag for met, tag in [
+            (reserve_kwh <= BATTERY_MIN_KWH, "CRÍTICO"),
+            (pct < 30, "ALERTA"),
+        ] if met),
+        "OK",
+    )
+
+
 # ---------------------------------------------------------------------------
 # Cycle report
 # ---------------------------------------------------------------------------
@@ -42,57 +58,51 @@ STATUS_EMOJI = {
 def display_cycle_report(state: ColonyState) -> None:
     """Print a concise report for the current simulation cycle."""
     period = "DIA" if state.is_daytime else "NOITE"
-    status_emoji = STATUS_EMOJI[state.status]
-    status_phrase = STATUS_PHRASES[state.status]
 
     print(SEPARATOR)
-    print(f"{status_emoji} CICLO {state.cycle:>3} [{period}] — AURORA SIGER  [{state.status.value}]")
-    print(f"   {status_phrase}")
+    print(f"{STATUS_EMOJI[state.status]} CICLO {state.cycle:>3} [{period}] — AURORA SIGER  [{state.status.value}]")
+    print(f"   {STATUS_PHRASES[state.status]}")
     print(SEPARATOR)
 
-    # Environment
-    wind = state.environment.wind_speed_ms
-    irr = state.environment.solar_irradiance_wm2
-    dust_int = state.environment.dust_storm_intensity
+    wind     = state.environment.wind_speed_ms
+    irr      = state.environment.solar_irradiance_wm2
     wind_str = f"{wind:.1f} m/s" if wind is not None else "SENSOR OFFLINE"
-    irr_str = f"{irr:.0f} W/m²" if irr is not None else ("NOITE" if not state.is_daytime else "SENSOR OFFLINE")
+    irr_str  = f"{irr:.0f} W/m²" if irr is not None else ("NOITE" if not state.is_daytime else "SENSOR OFFLINE")
 
     print(f"🛰  Ambiente")
     print(f"   Vento: {wind_str:<20} Irradiância: {irr_str}")
-    if dust_int > 0:
-        print(f"   ⚠  Tempestade de poeira — intensidade: {dust_int:.0%}")
+    if state.environment.dust_storm_intensity > 0:
+        print(f"   ⚠  Tempestade de poeira — intensidade: {state.environment.dust_storm_intensity:.0%}")
 
-    # Energy
-    energy = state.energy
+    energy      = state.energy
     battery_pct = energy.battery_reserve_kwh / BATTERY_TOTAL_CAPACITY_KWH * 100
-    print(f"⚡  Energia")
-    print(f"   Geração: solar {energy.solar_generation_kw:>7.1f} kW  |  eólica {energy.wind_generation_kw:>7.1f} kW")
-    print(f"   Consumo: {energy.total_consumption_kw:>7.1f} kW  |  Balanço: {energy.balance_kw:>+8.1f} kW")
-    print(f"   Bateria: {energy.battery_reserve_kwh:>7.1f} kWh ({battery_pct:.1f}%)  |  "
-          f"Poeira: {energy.solar_dust_accumulation:.1%}  Abrasão: {energy.wind_blade_abrasion:.1%}")
 
-    # Active modules
-    active_names = [m.name for m in state.modules if m.active]
+    print(f"⚡  Energia")
+    print(f"   🔋 Bateria  [{_bar(energy.battery_reserve_kwh, BATTERY_TOTAL_CAPACITY_KWH)}]  {energy.battery_reserve_kwh:>7.1f} kWh  {battery_pct:>5.1f}%  ({_battery_status(energy.battery_reserve_kwh, battery_pct)})")
+    print(f"   ☀  Solar    [{_bar(energy.solar_generation_kw,    _SOLAR_MAX_KW)}]  {energy.solar_generation_kw:>7.1f} kW")
+    print(f"   💨 Eólica   [{_bar(energy.wind_generation_kw,     _WIND_MAX_KW)}]  {energy.wind_generation_kw:>7.1f} kW")
+    print(f"   🔌 Consumo  [{_bar(energy.total_consumption_kw,   _CONSUME_MAX_KW)}]  {energy.total_consumption_kw:>7.1f} kW  |  Balanço: {energy.balance_kw:>+8.1f} kW")
+    print(f"   🌫 Poeira   [{_bar(energy.solar_dust_accumulation, 1.0)}]  {energy.solar_dust_accumulation:>6.1%}")
+    print(f"   ⚙  Abrasão  [{_bar(energy.wind_blade_abrasion,    1.0)}]  {energy.wind_blade_abrasion:>6.1%}")
+
+    active_names   = [m.name for m in state.modules if m.active]
     inactive_names = [m.name for m in state.modules if not m.active]
     print(f"🛰  Módulos ativos ({len(active_names)}/8): {', '.join(active_names)}")
     if inactive_names:
         print(f"   Inativos: {', '.join(inactive_names)}")
 
-    # Forecast
     regression = state.forecast.cycle_to_balance
     if is_regression_reliable(regression):
-        slope = regression.slope
-        direction = "↓ deteriorando" if slope is not None and slope < -1 else "→ estável"
-        predicted = regression.predict(float(state.cycle + 6))
+        slope         = regression.slope
+        direction     = "↓ deteriorando" if slope is not None and slope < -1 else "→ estável"
+        predicted     = regression.predict(float(state.cycle + 6))
         predicted_str = f"{predicted:+.1f} kW" if predicted is not None else "N/A"
         print(f"📡  Previsão (+6 ciclos): {predicted_str}  [{direction}]")
     else:
         remaining = FORECAST_MIN_CYCLES - regression.count
         print(f"📡  Previsão: aguardando {remaining} ciclo(s) para ativar regressão")
 
-    # Alerts
-    alerts = list(state.alert_queue)
-    current_cycle_alerts = [a for a in alerts if a["cycle"] == state.cycle]
+    current_cycle_alerts = [a for a in state.alert_queue if a["cycle"] == state.cycle]
     if current_cycle_alerts:
         print(f"🌙  Alertas ({len(current_cycle_alerts)}):")
         for alert in current_cycle_alerts:
@@ -112,14 +122,13 @@ def display_final_report(state: ColonyState) -> None:
     print(f"   {FINAL_PHRASES[state.status]}")
     print(SEPARATOR)
 
-    cycles_run = state.cycle
     battery_pct = state.energy.battery_reserve_kwh / BATTERY_TOTAL_CAPACITY_KWH * 100
 
-    print(f"🛰  Ciclos simulados: {cycles_run}")
+    print(f"🛰  Ciclos simulados: {state.cycle}")
     print(f"   Status final: {state.status.value}")
-    print(f"   Bateria final: {state.energy.battery_reserve_kwh:.1f} kWh ({battery_pct:.1f}%)")
-    print(f"   Poeira acumulada: {state.energy.solar_dust_accumulation:.1%}")
-    print(f"   Abrasão das pás: {state.energy.wind_blade_abrasion:.1%}")
+    print(f"   🔋 Bateria  [{_bar(state.energy.battery_reserve_kwh, BATTERY_TOTAL_CAPACITY_KWH)}]  {state.energy.battery_reserve_kwh:>7.1f} kWh  {battery_pct:>5.1f}%  ({_battery_status(state.energy.battery_reserve_kwh, battery_pct)})")
+    print(f"   🌫 Poeira   [{_bar(state.energy.solar_dust_accumulation, 1.0)}]  {state.energy.solar_dust_accumulation:>6.1%}")
+    print(f"   ⚙  Abrasão  [{_bar(state.energy.wind_blade_abrasion,    1.0)}]  {state.energy.wind_blade_abrasion:>6.1%}")
 
     if state.energy_history:
         avg_balance = sum(state.energy_history) / len(state.energy_history)
@@ -128,11 +137,8 @@ def display_final_report(state: ColonyState) -> None:
         print(f"⚡  Balanço energético")
         print(f"   Médio: {avg_balance:+.1f} kW  |  Mínimo: {min_balance:+.1f} kW  |  Máximo: {max_balance:+.1f} kW")
 
-    total_alerts = len(state.alert_queue)
-    print(f"🌙  Total de alertas: {total_alerts}")
-
-    active_count = sum(1 for m in state.modules if m.active)
-    print(f"🛰  Módulos ativos ao final: {active_count}/8")
+    print(f"🌙  Total de alertas: {len(state.alert_queue)}")
+    print(f"🛰  Módulos ativos ao final: {sum(1 for m in state.modules if m.active)}/8")
 
     regression = state.forecast.cycle_to_balance
     if is_regression_reliable(regression) and regression.slope is not None:
