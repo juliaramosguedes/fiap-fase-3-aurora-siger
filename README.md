@@ -6,7 +6,7 @@
 
 *Atividade Integradora · Fase 3 · Ciência da Computação, 2026 — FIAP*
 
-🧑‍🚀 [Julia Ramos | RM568988](https://www.linkedin.com/in/juliaramosguedes)
+🧑‍🚀 [Julia Ramos | RM568988](https://www.linkedin.com/in/juliaramosguedes) · [Matheus Fuchelberguer | RM569113](https://www.linkedin.com/in/matheus-fuchelberguer-neves/) · [Julio Joaquim | RM571321](https://github.com/jojigoats)
 
 ---
 
@@ -30,20 +30,20 @@ Cenário → Ambiente (dia/noite · vento · tempestade) → Anomalia opcional �
 
 ```mermaid
 flowchart TD
-    A([🌅 CICLO INICIA]) --> B[Avança ciclo\nDIA ↔ NOITE]
-    B --> C[Atualiza ambiente\nvento · solar · tempestade]
+    A([CICLO INICIA]) --> B[Avanca ciclo\nDIA / NOITE]
+    B --> C[Atualiza ambiente\nvento, solar, tempestade]
     C --> D{Anomalia?}
-    D -->|Probabilística| E[Injeta anomalia\ntempestade · falha · sensor]
-    D -->|Nenhuma| F[Calcula energia\nsolar + eólica]
+    D -->|Sim| E[Injeta anomalia\ntempestade, falha ou sensor]
+    D -->|Nao| F[Calcula energia\nsolar + eolica]
     E --> F
-    F --> G[Atualiza bateria\nbalanço × Δt]
-    G --> H[Welford O(1)\nvento→geração · ciclo→balanço]
-    H --> I{Estágio operacional?}
-    I -->|bateria ≤ mínimo\nou balanço crítico| L([☄️ CRÍTICO\nDesliga módulo menor prioridade])
-    I -->|previsão deteriorando| K([⚠ ALERTA\nMonitoramento intensificado])
-    I -->|bateria recuperada| M([✔ RECUPERANDO\nReativa módulo LIFO])
-    I -->|tudo nominal| J([⚡ OPERACIONAL])
-    J --> N[Exibe relatório do ciclo]
+    F --> G[Atualiza bateria\nbateria + balanco x 12h]
+    G --> H[Regressao Welford O1\nvento-geracao e ciclo-balanco]
+    H --> I{Estagio operacional?}
+    I -->|CRITICO| L([CRITICO\nDesliga modulo menor prioridade])
+    I -->|ALERTA| K([ALERTA\nMonitoramento intensificado])
+    I -->|RECUPERANDO| M([RECUPERANDO\nReativa modulo LIFO])
+    I -->|OPERACIONAL| J([OPERACIONAL])
+    J --> N[Relatorio do ciclo]
     K --> N
     L --> N
     M --> N
@@ -63,6 +63,106 @@ flowchart TD
     style M fill:#0a3d0a,color:#fff,stroke:#2ecc71,stroke-width:3px
     style N fill:#16213e,color:#fff,stroke:#4a90d9
 ```
+
+<details>
+<summary>🔬 Decisão por estágio — verificações em cadeia (cenário padrão)</summary>
+
+<details>
+<summary>OPERACIONAL — ciclo diurno nominal (ciclo 2)</summary>
+
+```mermaid
+flowchart LR
+    A([CICLO 2 DIA]) --> B["BATERIA > 124 kWh\n✔ 624 kWh"]
+    B --> C["BALANCO >= -10 kW\n✔ +98 kW"]
+    C --> D["BALANCO >= 0 kW\n✔ +98 kW"]
+    D --> E["PREVISAO +6 ciclos\n✔ sem cruzamento"]
+    E --> F([✔ OPERACIONAL])
+
+    style A fill:#1a1a2e,color:#fff,stroke:#4a90d9
+    style B fill:#1a2a3d,color:#fff,stroke:#2ecc71
+    style C fill:#1a2a3d,color:#fff,stroke:#2ecc71
+    style D fill:#1a2a3d,color:#fff,stroke:#2ecc71
+    style E fill:#1a2a3d,color:#fff,stroke:#2ecc71
+    style F fill:#0a3d0a,color:#fff,stroke:#2ecc71,stroke-width:3px
+```
+
+</details>
+
+<details>
+<summary>ALERTA — balanço abaixo do limiar (ciclo diurno degradado)</summary>
+
+```mermaid
+flowchart LR
+    A([CICLO X DIA]) --> B["BATERIA > 124 kWh\n✔ 450 kWh"]
+    B --> C["BALANCO >= -10 kW\n✗ -5 kW"]
+    C --> D([☄️ ALERTA])
+
+    style A fill:#1a1a2e,color:#fff,stroke:#4a90d9
+    style B fill:#1a2a3d,color:#fff,stroke:#2ecc71
+    style C fill:#3d1500,color:#fff,stroke:#f39c12
+    style D fill:#3d2200,color:#fff,stroke:#f39c12,stroke-width:3px
+```
+
+</details>
+
+<details>
+<summary>ALERTA — previsão deteriorando antes do cruzamento</summary>
+
+```mermaid
+flowchart LR
+    A([CICLO X DIA]) --> B["BATERIA > 124 kWh\n✔ 500 kWh"]
+    B --> C["BALANCO >= ALERTA\n✔ +8 kW"]
+    C --> D["PREVISAO +6 ciclos\n✗ -15 kW em 4 ciclos"]
+    D --> E([☄️ ALERTA])
+
+    style A fill:#1a1a2e,color:#fff,stroke:#4a90d9
+    style B fill:#1a2a3d,color:#fff,stroke:#2ecc71
+    style C fill:#1a2a3d,color:#fff,stroke:#2ecc71
+    style D fill:#3d1500,color:#fff,stroke:#f39c12
+    style E fill:#3d2200,color:#fff,stroke:#f39c12,stroke-width:3px
+```
+
+</details>
+
+<details>
+<summary>CRITICO — bateria esgotada, MIN-01 desligado</summary>
+
+```mermaid
+flowchart LR
+    A([CICLO X NOITE]) --> B["BATERIA <= 124 kWh\n✗ 90 kWh"]
+    B --> C["Candidatos pri > 1\n✔ 7 modulos"]
+    C --> D["Alvo: prioridade 8\n✔ MIN-01"]
+    D --> E([☄️ CRITICO — MIN-01 desligado])
+
+    style A fill:#1a1a2e,color:#fff,stroke:#4a90d9
+    style B fill:#3d0a0a,color:#fff,stroke:#e74c3c
+    style C fill:#1a2a3d,color:#fff,stroke:#2ecc71
+    style D fill:#1a2a3d,color:#fff,stroke:#2ecc71
+    style E fill:#3d0a0a,color:#fff,stroke:#e74c3c,stroke-width:3px
+```
+
+</details>
+
+<details>
+<summary>RECUPERANDO — bateria acima do mínimo, MIN-01 reativado (LIFO)</summary>
+
+```mermaid
+flowchart LR
+    A([CICLO X DIA]) --> B["BATERIA > 124 kWh\n✔ 180 kWh"]
+    B --> C["STACK nao vazio\n✔ MIN-01"]
+    C --> D["Reativa topo LIFO\n✔ MIN-01"]
+    D --> E([✔ RECUPERANDO])
+
+    style A fill:#1a1a2e,color:#fff,stroke:#4a90d9
+    style B fill:#1a2a3d,color:#fff,stroke:#2ecc71
+    style C fill:#1a2a3d,color:#fff,stroke:#2ecc71
+    style D fill:#1a2a3d,color:#fff,stroke:#2ecc71
+    style E fill:#0a3d0a,color:#fff,stroke:#2ecc71,stroke-width:3px
+```
+
+</details>
+
+</details>
 
 ---
 
@@ -313,4 +413,4 @@ fiap_fase_3_aurora_siger/
 > [!IMPORTANT]
 > *"A lógica é o começo da sabedoria, não o fim."* 🖖
 
-🧑‍🚀 [Julia Ramos | RM568988](https://www.linkedin.com/in/juliaramosguedes) · FIAP — Ciência da Computação
+🧑‍🚀 [Julia Ramos | RM568988](https://www.linkedin.com/in/juliaramosguedes) · [Matheus Fuchelberguer | RM569113](https://www.linkedin.com/in/matheus-fuchelberguer-neves/) · [Julio Joaquim | RM571321](https://github.com/jojigoats) · FIAP — Ciência da Computação
