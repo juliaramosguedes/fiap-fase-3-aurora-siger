@@ -334,19 +334,24 @@ python main.py --stress --cycles 400       # tempestade global longa
 
 ```
 =================================================================
-☄️ CICLO 103 [NOITE] — AURORA SIGER  [CRÍTICO]
+☄️ CICLO  39 [NOITE] — AURORA SIGER  [CRÍTICO]
    Resistência é inútil. Protocolo de emergência ativado.
 =================================================================
 🛰  Ambiente
-   Vento: 5.2 m/s              Irradiância: NOITE
+   Vento: 6.0 m/s              Irradiância: NOITE
+   ⚠  Tempestade de poeira — intensidade: 89%
 ⚡  Energia
-   Geração: solar     0.0 kW  |  eólica     0.0 kW
-   Consumo:    46.0 kW  |  Balanço:    -46.0 kW
-   Bateria:   124.8 kWh (20.0%)  |  Poeira: 12.4%  Abrasão: 1.1%
-🛰  Módulos ativos (7/8): LSS-01, MED-01, HAB-01, PWR-01, COM-01, SCI-01, LOG-01
+   Bateria  [████░░░░░░░░░░░░░░░░]    115.3 kWh   18.5%  (CRÍTICO)
+   Solar    [░░░░░░░░░░░░░░░░░░░░]      0.0 kW
+   Eólica   [░░░░░░░░░░░░░░░░░░░░]      0.0 kW
+   Consumo  [████████████████████]     46.0 kW  |  Balanço:    -46.0 kW
+   Poeira   [███░░░░░░░░░░░░░░░░░]   14.8%
+   Abrasão  [░░░░░░░░░░░░░░░░░░░░]    0.0%
+🛰  Módulos ativos (7/8): LSS-01 Life Support, MED-01 Medical, HAB-01 Habitat, PWR-01 Power Systems, COM-01 Communications, SCI-01 Science Lab, LOG-01 Logistics
    Inativos: MIN-01 ISRU Mining
+📡  Previsão (+6 ciclos): -12.6 kW  [→ estável]
 🌙  Alertas (1):
-   [DÉFICIT ENERGÉTICO] MIN-01 ISRU Mining desligado — bateria crítica: 124 kWh
+   [DÉFICIT ENERGÉTICO] MIN-01 ISRU Mining desligado — bateria crítica: 115 kWh
 ```
 
 ---
