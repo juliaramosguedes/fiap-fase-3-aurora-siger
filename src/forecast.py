@@ -89,3 +89,10 @@ def update_forecast(state: ColonyState) -> None:
         independent_value=float(state.cycle),
         dependent_value=energy.balance_kw,
     )
+
+    if state.is_daytime:
+        update_regression(
+            state.forecast.cycle_to_solar,
+            independent_value=float(state.cycle),
+            dependent_value=energy.solar_generation_kw,
+        )

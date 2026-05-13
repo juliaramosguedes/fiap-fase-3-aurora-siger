@@ -109,6 +109,12 @@ def display_cycle_report(state: ColonyState) -> None:
         wind_pred_str = f"{wind_pred:.1f} kW" if wind_pred is not None else "N/A"
         print(f"🌬  Eólica prevista (regressão): {wind_pred_str}  @ {wind_input:.1f} m/s")
 
+    solar_reg = state.forecast.cycle_to_solar
+    if is_regression_reliable(solar_reg):
+        solar_pred     = solar_reg.predict(float(state.cycle + 6))
+        solar_pred_str = f"{solar_pred:.1f} kW" if solar_pred is not None else "N/A"
+        print(f"☀️   Solar prevista (+6 ciclos): {solar_pred_str}")
+
     current_cycle_alerts = [a for a in state.alert_queue if a["cycle"] == state.cycle]
     if current_cycle_alerts:
         print(f"🌙  Alertas ({len(current_cycle_alerts)}):")

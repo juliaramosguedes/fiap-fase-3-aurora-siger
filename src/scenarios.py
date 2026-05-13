@@ -135,6 +135,7 @@ def default_scenario() -> ColonyState:
         forecast=ForecastState(
             wind_to_generation=OnlineRegression(),
             cycle_to_balance=OnlineRegression(),
+            cycle_to_solar=OnlineRegression(),
         ),
         status=SystemStatus.OPERATIONAL,
         energy_history=[],
@@ -198,6 +199,7 @@ def random_scenario() -> ColonyState:
         forecast=ForecastState(
             wind_to_generation=OnlineRegression(),
             cycle_to_balance=OnlineRegression(),
+            cycle_to_solar=OnlineRegression(),
         ),
         status=SystemStatus.OPERATIONAL,
         energy_history=[],

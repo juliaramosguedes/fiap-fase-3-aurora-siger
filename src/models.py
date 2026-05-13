@@ -84,10 +84,11 @@ class OnlineRegression:
 
 @dataclass
 class ForecastState:
-    """Two independent online regressions tracking energy trends."""
+    """Three independent online regressions tracking energy trends."""
 
     wind_to_generation: OnlineRegression    # wind speed (m/s) → wind generation (kW)
     cycle_to_balance: OnlineRegression      # cycle number → energy balance (kW)
+    cycle_to_solar: OnlineRegression        # cycle number → solar generation (kW, daytime only)
 
 
 class AlertEntry(TypedDict):
