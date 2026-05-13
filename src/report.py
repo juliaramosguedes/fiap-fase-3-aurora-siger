@@ -102,6 +102,13 @@ def display_cycle_report(state: ColonyState) -> None:
         remaining = FORECAST_MIN_CYCLES - regression.count
         print(f"📡  Previsão: aguardando {remaining} ciclo(s) para ativar regressão")
 
+    wind_reg = state.forecast.wind_to_generation
+    if is_regression_reliable(wind_reg):
+        wind_input    = state.last_valid_wind_speed_ms
+        wind_pred     = wind_reg.predict(wind_input)
+        wind_pred_str = f"{wind_pred:.1f} kW" if wind_pred is not None else "N/A"
+        print(f"🌬  Eólica prevista (regressão): {wind_pred_str}  @ {wind_input:.1f} m/s")
+
     current_cycle_alerts = [a for a in state.alert_queue if a["cycle"] == state.cycle]
     if current_cycle_alerts:
         print(f"🌙  Alertas ({len(current_cycle_alerts)}):")
