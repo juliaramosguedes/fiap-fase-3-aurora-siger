@@ -50,7 +50,7 @@ def determine_stage(state: ColonyState) -> SystemStatus:
 def shutdown_lowest_priority_module(state: ColonyState) -> bool:
     """Shut down the lowest-priority active module (priority > 1). Returns True if a module was shut down."""
     candidates = [
-        m for m in state.modules
+        m for m in state.modules.values()
         if m.active and m.priority > 1
     ]
     candidates.sort(key=lambda m: m.priority, reverse=True)
@@ -75,17 +75,14 @@ def reactivate_one_module(state: ColonyState) -> bool:
         return False
 
     module_name = state.shutdown_stack[-1]
-    for module in state.modules:
-        if module.name == module_name:
-            module.active = True
-            state.shutdown_stack.pop()
-            enqueue_alert(
-                state, AlertType.ENERGY_DEFICIT,
-                f"{module.name} reativado — bateria recuperada: {state.energy.battery_reserve_kwh:.0f} kWh",
-            )
-            return True
-
-    return False
+    module = state.modules[module_name]
+    module.active = True
+    state.shutdown_stack.pop()
+    enqueue_alert(
+        state, AlertType.ENERGY_DEFICIT,
+        f"{module.name} reativado — bateria recuperada: {state.energy.battery_reserve_kwh:.0f} kWh",
+    )
+    return True
 
 
 def apply_maintenance(state: ColonyState) -> None:
@@ -108,7 +105,7 @@ def apply_maintenance(state: ColonyState) -> None:
         energy.wind_blade_abrasion = perform_wind_maintenance()
 
     # Equipment failure repair
-    for module in state.modules:
+    for module in state.modules.values():
         if module.current_consumption_kw > module.nominal_consumption_kw:
             is_critical = module.priority <= CRITICAL_MODULE_PRIORITY_THRESHOLD
             if is_critical or random.random() < MAINTENANCE_PROBABILITY_PER_CYCLE:
@@ -127,15 +124,13 @@ def apply_maintenance(state: ColonyState) -> None:
 
 def apply_anomaly_equipment_failure(state: ColonyState, module_name: str) -> None:
     """Increase consumption of a module due to equipment failure."""
-    for module in state.modules:
-        if module.name == module_name:
-            increase = module.nominal_consumption_kw * EQUIPMENT_FAILURE_CONSUMPTION_INCREASE_PCT
-            module.current_consumption_kw += increase
-            enqueue_alert(
-                state, AlertType.EQUIPMENT_FAILURE,
-                f"{module.name} com falha — consumo aumentado para {module.current_consumption_kw:.0f} kW",
-            )
-            return
+    module = state.modules[module_name]
+    increase = module.nominal_consumption_kw * EQUIPMENT_FAILURE_CONSUMPTION_INCREASE_PCT
+    module.current_consumption_kw += increase
+    enqueue_alert(
+        state, AlertType.EQUIPMENT_FAILURE,
+        f"{module.name} com falha — consumo aumentado para {module.current_consumption_kw:.0f} kW",
+    )
 
 
 def apply_anomaly_sensor_error(state: ColonyState, sensor: str) -> None:

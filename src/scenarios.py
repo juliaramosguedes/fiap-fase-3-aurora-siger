@@ -33,9 +33,9 @@ from .models import (
 )
 
 
-def _build_default_modules() -> list[Module]:
-    """Eight colony modules at nominal consumption, all active 24h. Shutdown is energy-driven."""
-    return [
+def _build_default_modules() -> dict[str, Module]:
+    """Eight colony modules keyed by name — O(1) lookup. All active 24h; shutdown is energy-driven."""
+    entries = [
         Module(
             name=ModuleName.LIFE_SUPPORT.value,
             nominal_consumption_kw=LSS_CONSUMPTION_KW,
@@ -101,12 +101,13 @@ def _build_default_modules() -> list[Module]:
             sensor_operational=True,
         ),
     ]
+    return {m.name: m for m in entries}
 
 
 def default_scenario() -> ColonyState:
     """Fixed deterministic start: daytime, full battery, 15 m/s wind, no degradation."""
     modules = _build_default_modules()
-    total_consumption_kw = sum(m.current_consumption_kw for m in modules)
+    total_consumption_kw = sum(m.current_consumption_kw for m in modules.values())
 
     environment = EnvironmentReading(
         wind_speed_ms=WIND_SPEED_SENSOR_FALLBACK_MS,
@@ -169,7 +170,7 @@ def random_scenario() -> ColonyState:
     solar_dust_start = random.uniform(0.0, 0.20)
 
     modules = _build_default_modules()
-    total_consumption_kw = sum(m.current_consumption_kw for m in modules)
+    total_consumption_kw = sum(m.current_consumption_kw for m in modules.values())
 
     environment = EnvironmentReading(
         wind_speed_ms=wind_speed_ms,

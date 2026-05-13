@@ -85,8 +85,8 @@ def display_cycle_report(state: ColonyState) -> None:
     print(f"   {'Poeira':<8} [{_bar(energy.solar_dust_accumulation, 1.0)}]  {energy.solar_dust_accumulation:>6.1%}")
     print(f"   {'Abrasão':<8} [{_bar(energy.wind_blade_abrasion,    1.0)}]  {energy.wind_blade_abrasion:>6.1%}")
 
-    active_names   = [m.name for m in state.modules if m.active]
-    inactive_names = [m.name for m in state.modules if not m.active]
+    active_names   = [m.name for m in state.modules.values() if m.active]
+    inactive_names = [m.name for m in state.modules.values() if not m.active]
     print(f"🛰  Módulos ativos ({len(active_names)}/8): {', '.join(active_names)}")
     if inactive_names:
         print(f"   Inativos: {', '.join(inactive_names)}")
@@ -138,7 +138,7 @@ def display_final_report(state: ColonyState) -> None:
         print(f"   Médio: {avg_balance:+.1f} kW  |  Mínimo: {min_balance:+.1f} kW  |  Máximo: {max_balance:+.1f} kW")
 
     print(f"🌙  Total de alertas: {len(state.alert_queue)}")
-    print(f"🛰  Módulos ativos ao final: {sum(1 for m in state.modules if m.active)}/8")
+    print(f"🛰  Módulos ativos ao final: {sum(1 for m in state.modules.values() if m.active)}/8")
 
     regression = state.forecast.cycle_to_balance
     if is_regression_reliable(regression) and regression.slope is not None:

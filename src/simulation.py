@@ -106,7 +106,7 @@ def inject_anomaly(state: ColonyState, anomaly_probability: float) -> None:
         state.active_storm_cycles_remaining = duration
 
     elif anomaly_type == AnomalyType.EQUIPMENT_FAILURE:
-        module_name = random.choice(state.modules).name
+        module_name = random.choice(list(state.modules))
         apply_anomaly_equipment_failure(state, module_name)
 
     elif anomaly_type == AnomalyType.SENSOR_ERROR:

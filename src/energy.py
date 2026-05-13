@@ -91,9 +91,9 @@ def update_battery(
     return max(0.0, min(BATTERY_TOTAL_CAPACITY_KWH, updated))
 
 
-def compute_total_consumption_kw(modules: list) -> float:
+def compute_total_consumption_kw(modules: dict) -> float:
     """Sum of current_consumption_kw across all active modules."""
-    return sum(m.current_consumption_kw for m in modules if m.active)
+    return sum(m.current_consumption_kw for m in modules.values() if m.active)
 
 
 def update_energy_state(state: ColonyState) -> None:

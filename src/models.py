@@ -107,7 +107,7 @@ class ColonyState:
     is_daytime: bool              # True = solar generation active; False = no solar input
     environment: EnvironmentReading
     energy: EnergyState
-    modules: list[Module]
+    modules: dict[str, Module]
     forecast: ForecastState
     status: SystemStatus
     energy_history: list[float]       # balance_kw per cycle
