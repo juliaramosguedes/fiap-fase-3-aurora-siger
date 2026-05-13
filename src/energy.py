@@ -4,6 +4,8 @@ from .constants import (
     BATTERY_MIN_KWH,
     BATTERY_TOTAL_CAPACITY_KWH,
     MARS_AIR_DENSITY_KGM3,
+    MARTIAN_DAY_HOURS,
+    MARTIAN_NIGHT_HOURS,
     SOLAR_ARRAY_COUNT,
     SOLAR_DUST_ALERT_THRESHOLD,
     SOLAR_DUST_CRITICAL_THRESHOLD,
@@ -85,9 +87,10 @@ def perform_wind_maintenance() -> float:
 def update_battery(
     battery_reserve_kwh: float,
     balance_kw: float,
+    cycle_hours: float,
 ) -> float:
     """Charge or discharge the battery bank; clamped to [0, total capacity]."""
-    updated = battery_reserve_kwh + balance_kw
+    updated = battery_reserve_kwh + balance_kw * cycle_hours
     return max(0.0, min(BATTERY_TOTAL_CAPACITY_KWH, updated))
 
 
@@ -158,9 +161,11 @@ def update_energy_state(state: ColonyState) -> None:
 
     energy.total_consumption_kw = compute_total_consumption_kw(state.modules)
 
+    cycle_hours = MARTIAN_DAY_HOURS if state.is_daytime else MARTIAN_NIGHT_HOURS
     energy.battery_reserve_kwh = update_battery(
         energy.battery_reserve_kwh,
         energy.balance_kw,
+        cycle_hours,
     )
 
     state.energy_history.append(energy.balance_kw)

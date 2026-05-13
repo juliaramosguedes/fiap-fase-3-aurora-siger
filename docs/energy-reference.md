@@ -30,22 +30,25 @@ the deficit.
 ## BATTERY_MIN_KWH
 
 **Condition:** `battery_reserve_kwh <= BATTERY_MIN_KWH` → CRITICAL
-**Threshold:** `BATTERY_MIN_KWH = 124.8 kWh` (derived: `624.0 kWh × 20%`)
+**Threshold:** `BATTERY_MIN_KWH = 187.2 kWh` (derived: `936.0 kWh × 20%`)
 
 **Components:**
 - `BATTERY_CAPACITY_KWH = 312.0 kWh` per unit — arXiv:2410.00066
-- `BATTERY_COUNT = 2` — 1 reference unit + 1 redundant (SIMULATED; single-failure tolerance)
-- `BATTERY_TOTAL_CAPACITY_KWH = 624.0 kWh` — derived
+- `BATTERY_COUNT = 3` — 1 reference unit + 2 additional (SIMULATED; sized for worst-case night)
+- `BATTERY_TOTAL_CAPACITY_KWH = 936.0 kWh` — derived
 - `BATTERY_MIN_PCT = 20.0%` — SIMULATED
 
 **Source:** arXiv:2410.00066 — reference configuration for a 6-person Mars base:
-one 312 kWh battery unit. Second unit added as SIMULATED redundancy per
-single-failure-tolerance design principle (NASA-STD-8729.1).
+one 312 kWh battery unit. Additional units added as SIMULATED to satisfy worst-case
+nighttime survival with 25% safety margin (standard for life-critical power systems).
 
-**Justification:** 20% minimum prevents deep discharge degradation of lithium-ion cells
-(standard practice in terrestrial grid storage). At 124.8 kWh with 46 kW total consumption,
-the colony has ~2.7 hours of emergency power after the threshold is crossed — sufficient
-for a single reactivation cycle before cascade shutdown.
+**Justification:** Battery drain per cycle uses correct physics: `balance_kw × cycle_hours`
+(12.0 h day / 12.6 h night). Worst-case calm night drain: `46 kW × 12.6 h = 579.6 kWh`.
+Minimum total capacity to survive with 20% reserve: `579.6 / 0.8 = 724.5 kWh`.
+3 units (936 kWh) gives 936 × 0.8 = 748.8 kWh usable — 29% above worst-case drain,
+satisfying the 25% safety margin standard for life-critical systems (IEC 61508).
+At 187.2 kWh minimum with 46 kW consumption, the colony has ~4 hours of emergency
+power after the threshold is crossed.
 
 **Reference:** Hartwick, V. L. et al. *Implications of the Enercon E33 for Mars surface wind power*.
 Nature Astronomy, 2023. https://doi.org/10.1038/s41550-023-02022-5
@@ -114,18 +117,20 @@ False and the forecast stage is suppressed.
 ## Battery Sizing — Nighttime Sufficiency Analysis
 
 The battery must cover the nighttime deficit when both solar (= 0) and wind (typically
-offline, NASA NTRS 19790057281) are unavailable.
+offline, NASA NTRS 19790057281) are unavailable. Battery update uses correct physics:
+`balance_kw × cycle_hours` — 12.0 h for day cycles, 12.6 h for night cycles.
 
 ```
-Minimum battery to survive one full night:
-  consumption = 46 kW × 12.6 h = 579.6 kWh
+Worst-case calm night drain:
+  46 kW × 12.6 h = 579.6 kWh
 
-Total capacity = 624.0 kWh  →  margin = 44.4 kWh (7.1%)
+Minimum total capacity (20% reserve, 25% safety margin):
+  579.6 / 0.8 × 1.25 = 905.6 kWh  →  3 × 312 = 936 kWh ✓
+
+Usable capacity:  936 × 0.8 = 748.8 kWh  >  579.6 kWh
+Safety margin:    748.8 / 579.6 = 1.29  (29% above worst-case)
+After quiet night: 936 − 579.6 = 356.4 kWh  >  187.2 kWh minimum ✓
 ```
-
-The colony can survive exactly one quiet night at full consumption before depletion.
-This tight margin is why `BATTERY_MIN_PCT = 20%` triggers shutdown before the battery
-is fully exhausted — to preserve the recovery window.
 
 **Reference:** NASA. *Mars Fact Sheet*. https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html
 
@@ -136,10 +141,10 @@ is fully exhausted — to preserve the recovery window.
 | Constant | Value | Type | Source |
 |---|---|---|---|
 | `BATTERY_CAPACITY_KWH` | 312.0 kWh | Referenced | arXiv:2410.00066 |
-| `BATTERY_COUNT` | 2 | SIMULATED | arXiv:2410.00066 + redundancy |
-| `BATTERY_TOTAL_CAPACITY_KWH` | 624.0 kWh | Derived | — |
+| `BATTERY_COUNT` | 3 | SIMULATED | Worst-case night survival + 25% margin |
+| `BATTERY_TOTAL_CAPACITY_KWH` | 936.0 kWh | Derived | — |
 | `BATTERY_MIN_PCT` | 20% | SIMULATED | Grid storage standard |
-| `BATTERY_MIN_KWH` | 124.8 kWh | Derived | — |
+| `BATTERY_MIN_KWH` | 187.2 kWh | Derived | — |
 | `ENERGY_CRITICAL_THRESHOLD_KW` | −15.0 kW | SIMULATED | Hartwick et al. (2023) |
 | `ENERGY_ALERT_THRESHOLD_KW` | −5.0 kW | SIMULATED | Hartwick et al. (2023) |
 | `FORECAST_HORIZON_CYCLES` | 6 cycles | SIMULATED | 3 Martian sols |

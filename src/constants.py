@@ -18,8 +18,10 @@ SOLAR_ARRAY_COUNT: int = 1
 WIND_TURBINE_COUNT: int = 2
 # arXiv:2410.00066: 1 E33 (reference) + 1 redundant unit (SIMULATED)
 
-BATTERY_COUNT: int = 2
-# arXiv:2410.00066: 1 battery 312 kWh (reference) + 1 redundant unit (SIMULATED)
+BATTERY_COUNT: int = 3
+# arXiv:2410.00066: 1 battery 312 kWh (reference) + 2 additional units (SIMULATED)
+# 3 × 312 = 936 kWh — minimum to survive worst-case calm night (46 kW × 12.6h = 580 kWh)
+# with 20% reserve: 936 × 0.8 = 749 kWh usable > 580 kWh; satisfies 25% safety margin
 
 # -- Colony location --
 
