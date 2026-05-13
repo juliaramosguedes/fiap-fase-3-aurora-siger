@@ -176,12 +176,12 @@ flowchart LR
 
 **Tabela hash** — `dict[K, V]` explicitamente para coleções indexadas por chave dinâmica; dataclasses implicitamente via `__dict__` para registros de esquema fixo. Mesmo mecanismo, semântica diferente.
 
-**Regressão online** — Welford incremental: O(1) por ciclo, O(1) memória. Sem armazenamento de histórico — compatível com hardware embarcado de memória limitada.
-
-> [!NOTE]
-> **Acesso O(1) por design** — tabela hash e regressão online compartilham o mesmo princípio: O(1) por operação, O(1) memória. Estruturas que não crescem com o número de ciclos.
+**Regressão online** — Welford incremental: sem armazenamento de histórico — compatível com hardware embarcado de memória limitada.
 
 **Seed fixo** — `RANDOM_SEED = 42` em `constants.py` garante reprodutibilidade total. Toda simulação é determinística e auditável — o mesmo cenário sempre produz o mesmo resultado.
+
+> [!IMPORTANT]
+> **Acesso O(1) por design** — tabela hash e regressão online compartilham o mesmo princípio: O(1) por operação, O(1) memória. Estruturas que não crescem com o número de ciclos.
 
 ---
 
