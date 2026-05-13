@@ -178,6 +178,12 @@ flowchart LR
 
 **Seed fixo** — `RANDOM_SEED = 42` em `constants.py` garante reprodutibilidade total. Toda simulação é determinística e auditável — o mesmo cenário sempre produz o mesmo resultado.
 
+> [!NOTE]
+> **Tabelas hash em todo lugar — explícita e implicitamente.**
+> O acesso a módulos por nome (`state.modules["LSS-01 Life Support"]`) é uma tabela hash explícita: `dict[str, Module]`, O(1) por chave em tempo de execução.
+> O acesso a atributos de dataclass (`state.energy.battery_reserve_kwh`) também é O(1) — Python armazena atributos de objetos em `__dict__`, que é internamente uma tabela hash.
+> A diferença de design é semântica: dataclass quando o esquema é fixo e conhecido em tempo de projeto; dict quando a coleção é indexada por uma chave dinâmica em tempo de execução.
+
 ---
 
 ## O que é o MGAB
