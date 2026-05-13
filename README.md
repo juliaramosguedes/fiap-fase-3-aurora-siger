@@ -172,11 +172,14 @@ flowchart LR
 
 **Fonte única da verdade** — todos os limiares numéricos definidos uma vez em `src/constants.py`; reutilizados em energia, decisão e relatórios. Nenhum magic number no código.
 
-**Acesso O(1)** — toda estrutura de dados usa tabela hash: `dict[K, V]` explicitamente para coleções indexadas por chave dinâmica; dataclasses implicitamente via `__dict__` para registros de esquema fixo. Mesmo mecanismo, semântica diferente.
-
 **Separação estrita por responsabilidade** — `energy.py` calcula; `decision.py` decide; `report.py` exibe. Nenhum módulo conhece o funcionamento interno do outro.
 
+**Tabela hash** — `dict[K, V]` explicitamente para coleções indexadas por chave dinâmica; dataclasses implicitamente via `__dict__` para registros de esquema fixo. Mesmo mecanismo, semântica diferente.
+
 **Regressão online** — Welford incremental: O(1) por ciclo, O(1) memória. Sem armazenamento de histórico — compatível com hardware embarcado de memória limitada.
+
+> [!NOTE]
+> **Acesso O(1) por design** — tabela hash e regressão online compartilham o mesmo princípio: O(1) por operação, O(1) memória. Estruturas que não crescem com o número de ciclos.
 
 **Seed fixo** — `RANDOM_SEED = 42` em `constants.py` garante reprodutibilidade total. Toda simulação é determinística e auditável — o mesmo cenário sempre produz o mesmo resultado.
 
