@@ -47,26 +47,33 @@ def determine_stage(state: ColonyState) -> SystemStatus:
     return SystemStatus.OPERATIONAL
 
 
-def shutdown_lowest_priority_module(state: ColonyState) -> bool:
-    """Shut down the lowest-priority active module (priority > 1). Returns True if a module was shut down."""
-    candidates = [
-        m for m in state.modules.values()
-        if m.active and m.priority > 1
-    ]
-    candidates.sort(key=lambda m: m.priority, reverse=True)
+def shutdown_to_stabilize(state: ColonyState) -> bool:
+    """Shut down lowest-priority modules until balance >= 0 or no candidates remain."""
+    candidates = sorted(
+        [m for m in state.modules.values() if m.active and m.priority > 1],
+        key=lambda m: m.priority,
+        reverse=True,
+    )
 
     if not candidates:
         return False
 
-    target = candidates[0]
-    target.active = False
-    state.shutdown_stack.append(target.name)
+    current_balance = state.energy.balance_kw
+    shutdown_count = 0
 
-    enqueue_alert(
-        state, AlertType.ENERGY_DEFICIT,
-        f"{target.name} desligado — bateria crítica: {state.energy.battery_reserve_kwh:.0f} kWh",
-    )
-    return True
+    for module in candidates:
+        if current_balance >= 0:
+            break
+        module.active = False
+        state.shutdown_stack.append(module.name)
+        current_balance += module.current_consumption_kw
+        shutdown_count += 1
+        enqueue_alert(
+            state, AlertType.ENERGY_DEFICIT,
+            f"{module.name} desligado — bateria crítica: {state.energy.battery_reserve_kwh:.0f} kWh",
+        )
+
+    return shutdown_count > 0
 
 
 def reactivate_one_module(state: ColonyState) -> bool:
@@ -150,7 +157,7 @@ def apply_decision(state: ColonyState) -> None:
     new_status = determine_stage(state)
 
     if new_status == SystemStatus.CRITICAL:
-        shutdown_lowest_priority_module(state)
+        shutdown_to_stabilize(state)
         state.status = SystemStatus.CRITICAL
 
     elif new_status == SystemStatus.ALERT:
