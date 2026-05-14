@@ -72,7 +72,7 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-    A([CICLO 2 DIA]) --> B["BATERIA > 124 kWh\n✔ 624 kWh"]
+    A([CICLO 2 DIA]) --> B["BATERIA > 187 kWh\n✔ 936 kWh"]
     B --> C["BALANCO >= -10 kW\n✔ +98 kW"]
     C --> D["BALANCO >= 0 kW\n✔ +98 kW"]
     D --> E["PREVISAO +6 ciclos\n✔ sem cruzamento"]
@@ -281,7 +281,7 @@ A segunda turbina e a segunda bateria são redundância operacional — tolerân
 | Geração solar com poeira | `P = I × A × η × (1 − d)` | Linear | `solar_generation_kw` |
 | Geração eólica (lei de Betz) | `P = ½ × ρ × Cp × A × v³` para `v ≥ v_cut` | Cúbica | `wind_generation_kw` |
 | Atualização da bateria | `B(t) = clamp(B(t−1) + balanço × Δt, B_min, B_max)` | Linear | `battery_reserve_kwh` |
-| Regressão linear (Welford) | `slope = C / S_xx`, `intercept = ȳ − slope × x̄` | Incremental O(1) | `cycle_to_balance`, `wind_to_generation` |
+| Regressão linear (Welford) | `slope = C / S_xx`, `intercept = ȳ − slope × x̄` | Incremental O(1) | `cycle_to_balance`, `wind_to_generation`, `cycle_to_solar` |
 
 ---
 
@@ -339,24 +339,26 @@ python main.py --stress --cycles 400       # tempestade global longa
 
 ```
 =================================================================
-☄️ CICLO  39 [NOITE] — AURORA SIGER  [CRÍTICO]
+☄️ CICLO   9 [NOITE] — AURORA SIGER  [CRÍTICO]
    Resistência é inútil. Protocolo de emergência ativado.
 =================================================================
 🛰  Ambiente
-   Vento: 6.0 m/s              Irradiância: NOITE
+   Vento: 9.1 m/s              Irradiância: NOITE
    ⚠  Tempestade de poeira — intensidade: 89%
 ⚡  Energia
-   Bateria  [████░░░░░░░░░░░░░░░░]    115.3 kWh   18.5%  (CRÍTICO)
+   Bateria  [░░░░░░░░░░░░░░░░░░░░]      0.0 kWh    0.0%  (CRÍTICO)
    Solar    [░░░░░░░░░░░░░░░░░░░░]      0.0 kW
    Eólica   [░░░░░░░░░░░░░░░░░░░░]      0.0 kW
-   Consumo  [████████████████████]     46.0 kW  |  Balanço:    -46.0 kW
-   Poeira   [███░░░░░░░░░░░░░░░░░]   14.8%
-   Abrasão  [░░░░░░░░░░░░░░░░░░░░]    0.0%
+   Consumo  [████████████████████]     47.0 kW  |  Balanço:    -47.0 kW
+   Poeira   [█░░░░░░░░░░░░░░░░░░░]    3.4%
+   Abrasão  [░░░░░░░░░░░░░░░░░░░░]    0.7%
 🛰  Módulos ativos (7/8): LSS-01 Life Support, MED-01 Medical, HAB-01 Habitat, PWR-01 Power Systems, COM-01 Communications, SCI-01 Science Lab, LOG-01 Logistics
    Inativos: MIN-01 ISRU Mining
-📡  Previsão (+6 ciclos): -12.6 kW  [→ estável]
+📡  Previsão (+6 ciclos): -21.6 kW  [→ estável]
+🌬  Eólica prevista (regressão): 10.5 kW  @ 9.1 m/s
+☀️   Solar prevista (+6 ciclos): 33.1 kW
 🌙  Alertas (1):
-   [DÉFICIT ENERGÉTICO] MIN-01 ISRU Mining desligado — bateria crítica: 115 kWh
+   [DÉFICIT ENERGÉTICO] MIN-01 ISRU Mining desligado — bateria crítica: 0 kWh
 ```
 
 ---
