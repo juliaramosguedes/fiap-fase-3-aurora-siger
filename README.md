@@ -25,6 +25,17 @@ MGAB — Módulo de Gerenciamento Autônomo de Base. A Aurora Siger entrou em op
 Cenário → Ambiente (dia/noite · vento · tempestade) → Anomalia opcional → Energia (solar + eólica − consumo) → Bateria → Regressão Welford → Decisão (4 estágios) → Relatório
 ```
 
+1. **Cenário** — condições iniciais injetadas via `default_scenario()` ou `random_scenario()`; seed fixo garante reprodutibilidade
+2. **Ambiente** — vento e irradiância atualizados a cada ciclo; tempestade de poeira reduz solar em até 95% e altera regime de vento
+3. **Anomalia** — injeção probabilística: tempestade, falha de equipamento (+30% consumo) ou erro de sensor (fallback para última leitura válida)
+4. **Energia** — geração solar (`P = A × irr × η × (1−poeira)`) e eólica (Betz: `½ρAv³`) calculadas; bateria atualizada com física correta (`balanço × Δt`)
+5. **Regressão Welford** — três regressões O(1): `vento → geração`, `ciclo → balanço`, `ciclo → solar`; previsão ativa após 4 observações
+6. **Decisão** — 4 estágios em cadeia: CRÍTICO desliga módulo de menor prioridade (LIFO); ALERTA monitora; RECUPERANDO reativa; OPERACIONAL mantém
+7. **Relatório** — progresso por barras ASCII, previsões das três regressões, alertas do ciclo
+
+> [!CAUTION]
+> Em `--stress`, uma tempestade global envolve a colônia desde o ciclo 1. Noites sem vento drenam a bateria antes do amanhecer. **Resistência é inútil.**
+
 ```mermaid
 flowchart TD
     A([CICLO INICIA]) --> B[Avanca ciclo\nDIA / NOITE]
@@ -60,9 +71,6 @@ flowchart TD
     style M fill:#0a3d0a,color:#fff,stroke:#2ecc71,stroke-width:3px
     style N fill:#16213e,color:#fff,stroke:#4a90d9
 ```
-
-> [!CAUTION]
-> Em `--stress`, uma tempestade global envolve a colônia desde o ciclo 1. Noites sem vento drenam a bateria antes do amanhecer. **Resistência é inútil.**
 
 <details>
 <summary>🔬 Decisão por estágio — verificações em cadeia (cenário padrão)</summary>
