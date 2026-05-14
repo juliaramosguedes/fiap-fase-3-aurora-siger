@@ -17,9 +17,6 @@ MGAB — Módulo de Gerenciamento Autônomo de Base. A Aurora Siger entrou em op
 > [!IMPORTANT]
 > O desafio não é sobreviver — é manter a colônia funcionando de forma autônoma, estável e eficiente, sol após sol, mesmo quando Marte não coopera. Nenhuma intervenção humana é necessária para transitar entre os quatro estágios operacionais.
 
-> [!CAUTION]
-> Em `--stress`, uma tempestade global envolve a colônia desde o ciclo 1. Noites sem vento drenam a bateria antes do amanhecer. **Resistência é inútil.**
-
 ---
 
 ## 🛸 Pipeline
@@ -63,6 +60,9 @@ flowchart TD
     style M fill:#0a3d0a,color:#fff,stroke:#2ecc71,stroke-width:3px
     style N fill:#16213e,color:#fff,stroke:#4a90d9
 ```
+
+> [!CAUTION]
+> Em `--stress`, uma tempestade global envolve a colônia desde o ciclo 1. Noites sem vento drenam a bateria antes do amanhecer. **Resistência é inútil.**
 
 <details>
 <summary>🔬 Decisão por estágio — verificações em cadeia (cenário padrão)</summary>
