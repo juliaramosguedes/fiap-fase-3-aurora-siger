@@ -30,7 +30,7 @@ Cenário → Ambiente (dia/noite · vento · tempestade) → Anomalia opcional �
 3. **Anomalia** — injeção probabilística: tempestade, falha de equipamento (+30% consumo) ou erro de sensor (fallback para última leitura válida)
 4. **Energia** — geração solar (`P = A × irr × η × (1−poeira)`) e eólica (Betz: `½ρAv³`) calculadas; bateria atualizada com física correta (`balanço × Δt`)
 5. **Regressão Welford** — três regressões O(1): `vento → geração`, `ciclo → balanço`, `ciclo → solar`; previsão ativa após 4 observações
-6. **Decisão** — 4 estágios em cadeia: CRÍTICO desliga módulo de menor prioridade (LIFO); ALERTA monitora; RECUPERANDO reativa; OPERACIONAL mantém
+6. **Decisão** — 4 estágios em cadeia: CRÍTICO desliga todos os módulos não-essenciais necessários até balanço ≥ 0; ALERTA monitora; RECUPERANDO reativa um por ciclo (LIFO); OPERACIONAL mantém
 7. **Relatório** — progresso por barras ASCII, previsões das três regressões, alertas do ciclo
 
 > [!CAUTION]
@@ -47,7 +47,7 @@ flowchart TD
     F --> G[Atualiza bateria\nbateria + balanco x 12h]
     G --> H[Regressao Welford O1\nvento-geracao e ciclo-balanco]
     H --> I{Estagio operacional?}
-    I -->|CRITICO| L([CRITICO\nDesliga modulo menor prioridade])
+    I -->|CRITICO| L([CRITICO\nDesliga modulos ate balanco >= 0])
     I -->|ALERTA| K([ALERTA\nMonitoramento intensificado])
     I -->|RECUPERANDO| M([RECUPERANDO\nReativa modulo LIFO])
     I -->|OPERACIONAL| J([OPERACIONAL])
@@ -133,14 +133,14 @@ flowchart LR
 </details>
 
 <details>
-<summary>CRITICO — bateria esgotada, MIN-01 desligado</summary>
+<summary>CRITICO — bateria esgotada, 7 módulos desligados</summary>
 
 ```mermaid
 flowchart LR
-    A([CICLO X NOITE]) --> B["BATERIA <= 124 kWh\n✗ 90 kWh"]
-    B --> C["Candidatos pri > 1\n✔ 7 modulos"]
-    C --> D["Alvo: prioridade 8\n✔ MIN-01"]
-    D --> E([☄️ CRITICO — MIN-01 desligado])
+    A([CICLO X NOITE]) --> B["BATERIA <= 187 kWh\n✗ 120 kWh"]
+    B --> C["Balanco: -46 kW\nCandidatos: 7 modulos"]
+    C --> D["Desliga ate\nbalanco >= 0 kW"]
+    D --> E([☄️ CRITICO — 7 modulos desligados])
 
     style A fill:#1a1a2e,color:#fff,stroke:#4a90d9
     style B fill:#3d0a0a,color:#fff,stroke:#e74c3c
@@ -347,26 +347,32 @@ python main.py --stress --cycles 400       # tempestade global longa
 
 ```
 =================================================================
-☄️ CICLO   9 [NOITE] — AURORA SIGER  [CRÍTICO]
+☄️ CICLO  11 [NOITE] — AURORA SIGER  [CRÍTICO]
    Resistência é inútil. Protocolo de emergência ativado.
 =================================================================
 🛰  Ambiente
-   Vento: 9.1 m/s              Irradiância: NOITE
+   Vento: 3.7 m/s              Irradiância: NOITE
    ⚠  Tempestade de poeira — intensidade: 89%
 ⚡  Energia
-   Bateria  [░░░░░░░░░░░░░░░░░░░░]      0.0 kWh    0.0%  (CRÍTICO)
+   Bateria  [█░░░░░░░░░░░░░░░░░░░]     64.8 kWh    6.9%  (CRÍTICO)
    Solar    [░░░░░░░░░░░░░░░░░░░░]      0.0 kW
    Eólica   [░░░░░░░░░░░░░░░░░░░░]      0.0 kW
-   Consumo  [████████████████████]     47.0 kW  |  Balanço:    -47.0 kW
-   Poeira   [█░░░░░░░░░░░░░░░░░░░]    3.4%
-   Abrasão  [░░░░░░░░░░░░░░░░░░░░]    0.7%
-🛰  Módulos ativos (7/8): LSS-01 Life Support, MED-01 Medical, HAB-01 Habitat, PWR-01 Power Systems, COM-01 Communications, SCI-01 Science Lab, LOG-01 Logistics
-   Inativos: MIN-01 ISRU Mining
-📡  Previsão (+6 ciclos): -21.6 kW  [→ estável]
-🌬  Eólica prevista (regressão): 10.5 kW  @ 9.1 m/s
-☀️   Solar prevista (+6 ciclos): 33.1 kW
-🌙  Alertas (1):
-   [DÉFICIT ENERGÉTICO] MIN-01 ISRU Mining desligado — bateria crítica: 0 kWh
+   Consumo  [████████████████████]     47.4 kW  |  Balanço:    -47.4 kW
+   Poeira   [█░░░░░░░░░░░░░░░░░░░]    4.2%
+   Abrasão  [░░░░░░░░░░░░░░░░░░░░]    0.0%
+🛰  Módulos ativos (1/8): LSS-01 Life Support
+   Inativos: MED-01 Medical, HAB-01 Habitat, PWR-01 Power Systems, COM-01 Communications, SCI-01 Science Lab, LOG-01 Logistics, MIN-01 ISRU Mining
+📡  Previsão (+6 ciclos): -8.7 kW  [→ estável]
+🌬  Eólica prevista (regressão): -0.8 kW  @ 3.7 m/s
+☀️   Solar prevista (+6 ciclos): 32.8 kW
+🌙  Alertas (7):
+   [DÉFICIT ENERGÉTICO] MIN-01 ISRU Mining desligado — bateria crítica: 65 kWh
+   [DÉFICIT ENERGÉTICO] LOG-01 Logistics desligado — bateria crítica: 65 kWh
+   [DÉFICIT ENERGÉTICO] SCI-01 Science Lab desligado — bateria crítica: 65 kWh
+   [DÉFICIT ENERGÉTICO] COM-01 Communications desligado — bateria crítica: 65 kWh
+   [DÉFICIT ENERGÉTICO] PWR-01 Power Systems desligado — bateria crítica: 65 kWh
+   [DÉFICIT ENERGÉTICO] HAB-01 Habitat desligado — bateria crítica: 65 kWh
+   [DÉFICIT ENERGÉTICO] MED-01 Medical desligado — bateria crítica: 65 kWh
 ```
 
 ---

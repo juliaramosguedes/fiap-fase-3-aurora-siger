@@ -47,8 +47,9 @@ nighttime survival with 25% safety margin (standard for life-critical power syst
 Minimum total capacity to survive with 20% reserve: `579.6 / 0.8 = 724.5 kWh`.
 3 units (936 kWh) gives 936 × 0.8 = 748.8 kWh usable — 29% above worst-case drain,
 satisfying the 25% safety margin standard for life-critical systems (IEC 61508).
-At 187.2 kWh minimum with 46 kW consumption, the colony has ~4 hours of emergency
-power after the threshold is crossed.
+When the threshold is crossed, `shutdown_to_stabilize` immediately deactivates all
+non-essential modules — leaving only LSS-01 (14 kW). At 187.2 kWh with 14 kW consumption,
+the colony has ~13 hours of emergency power before full depletion.
 
 **Reference:** Hartwick, V. L. et al. *Implications of the Enercon E33 for Mars surface wind power*.
 Nature Astronomy, 2023. https://doi.org/10.1038/s41550-023-02022-5
