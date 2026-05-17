@@ -47,9 +47,16 @@ nighttime survival with 25% safety margin (standard for life-critical power syst
 Minimum total capacity to survive with 20% reserve: `579.6 / 0.8 = 724.5 kWh`.
 3 units (936 kWh) gives 936 × 0.8 = 748.8 kWh usable — 29% above worst-case drain,
 satisfying the 25% safety margin standard for life-critical systems (IEC 61508).
-When the threshold is crossed, `shutdown_to_stabilize` immediately deactivates all
-non-essential modules — leaving only LSS-01 (14 kW). At 187.2 kWh with 14 kW consumption,
-the colony has ~13 hours of emergency power before full depletion.
+When the threshold is crossed, `shutdown_to_stabilize` reduces essential modules to survival
+mode (MED → 2.5 kW, HAB → 1.5 kW, PWR → 2.0 kW, COM → 0.5 kW) and fully shuts down
+non-essentials, leaving the colony at 20.5 kW MSC draw (LSS 14 + MED 2.5 + HAB 1.5 + PWR 2.0 + COM 0.5).
+At 187.2 kWh with 20.5 kW consumption, the colony has ~9.1 h of emergency power before
+full depletion — more than doubles the ~4.1 h at nominal 46 kW draw.
+
+**Calm night survival risk:** 20.5 kW × 12.6 h = 258.3 kWh drain exceeds the 187.2 kWh
+minimum reserve. A full calm night in survival mode will itself cross `BATTERY_MIN_KWH`,
+triggering `shutdown_to_stabilize` again with no further modules to cut. Recovery requires
+wind or daytime solar to resume generation before depletion.
 
 **Reference:** Hartwick, V. L. et al. *Implications of the Enercon E33 for Mars surface wind power*.
 Nature Astronomy, 2023. https://doi.org/10.1038/s41550-023-02022-5
@@ -137,6 +144,43 @@ After quiet night: 936 − 579.6 = 356.4 kWh  >  187.2 kWh minimum ✓
 
 ---
 
+---
+
+## Survival Consumption — Minimum Survival Configuration (MSC)
+
+**Trigger:** `BATTERY_MIN_KWH` crossed → `shutdown_to_stabilize` → Phase 1: essential modules
+
+Essential modules cannot be fully shut down per NASA DRA 5.0 life-safety requirements.
+Instead they enter survival mode, holding only the minimum necessary functionality.
+LSS-01 has no survival mode — it is inviolable at 14 kW.
+
+Per NASA, HAB is physical living infrastructure (crew quarters, galley, lighting) — not
+atmospheric systems. Atmospheric temperature and pressure regulation belong to ECLSS/LSS.
+HAB in survival mode = hull integrity sensors + minimal emergency lighting only.
+
+| Module | Nominal | Survival | Reduction | Basis |
+|---|---|---|---|---|
+| MED-01 | 5.0 kW | 2.5 kW | −50% | Trauma-only: ventilators, monitors, emergency dispenser; imaging and labs offline |
+| HAB-01 | 7.0 kW | 1.5 kW | −79% | Hull integrity sensors + minimal emergency lighting; quarters, galley and HVAC offline |
+| PWR-01 | 4.0 kW | 2.0 kW | −50% | Core distribution bus only; non-essential branches offline (cascade risk if fully cut) |
+| COM-01 | 3.0 kW | 0.5 kW | −83% | Emergency beacon only; all relay and uplink systems offline |
+
+All values: **SIMULATED** — proportional to function criticality.
+PWR-01 cannot be fully shut down: its distribution bus feeds all other modules including LSS-01.
+COM-01 keeps only the emergency beacon: the crew must be able to signal Earth and other missions
+regardless of energy state.
+
+**Survival total: 20.5 kW** (LSS 14 + MED 2.5 + HAB 1.5 + PWR 2.0 + COM 0.5)
+Survivable on wind alone at Hartwick best sites: 24 kW/turbine × 2 = 48 kW average.
+Calm night worst-case: 20.5 kW × 12.6 h = 258.3 kWh drain vs 187.2 kWh minimum reserve.
+Battery depletes in ~9.1 h without generation — more than doubles survival time vs nominal (4.1 h).
+
+Recovery: energy-gated. Modules are restored when `generation − current_consumption ≥ restore_cost`.
+Most-critical modules restored first (lowest priority number). If margin only covers some, the
+rest remain in survival/shutdown until the next cycle with sufficient generation.
+
+---
+
 ## Summary Table
 
 | Constant | Value | Type | Source |
@@ -150,3 +194,7 @@ After quiet night: 936 − 579.6 = 356.4 kWh  >  187.2 kWh minimum ✓
 | `ENERGY_ALERT_THRESHOLD_KW` | −5.0 kW | SIMULATED | Hartwick et al. (2023) |
 | `FORECAST_HORIZON_CYCLES` | 6 cycles | SIMULATED | 3 Martian sols |
 | `FORECAST_MIN_CYCLES` | 4 cycles | SIMULATED | Welford (1962) |
+| `MED_SURVIVAL_CONSUMPTION_KW` | 2.5 kW | SIMULATED | Trauma-only MSC |
+| `HAB_SURVIVAL_CONSUMPTION_KW` | 1.5 kW | SIMULATED | Hull sensors + emergency lighting MSC |
+| `PWR_SURVIVAL_CONSUMPTION_KW` | 2.0 kW | SIMULATED | Core bus MSC |
+| `COM_SURVIVAL_CONSUMPTION_KW` | 0.5 kW | SIMULATED | Emergency beacon MSC |

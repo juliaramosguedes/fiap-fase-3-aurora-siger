@@ -92,6 +92,24 @@ SCI_CONSUMPTION_KW: float = 5.0    # SIMULATED — surface science laboratory
 LOG_CONSUMPTION_KW: float = 3.0    # SIMULATED — rover charging, EVA support, storage
 MIN_CONSUMPTION_KW: float = 5.0    # SIMULATED — ISRU basic: O₂ and H₂O extraction
 
+# -- Survival consumption (CRITICAL stage — essential modules only) --
+# SIMULATED — minimum survival configuration (MSC); LSS-01 has no survival mode (inviolable)
+# Total survival: 14 + 2.5 + 1.5 + 2.0 + 0.5 = 20.5 kW — survivable on wind alone (Hartwick best sites: 48 kW)
+
+MED_SURVIVAL_CONSUMPTION_KW: float = 2.5
+# SIMULATED — trauma-only: ventilators, monitors, emergency dispenser; imaging and labs offline
+
+HAB_SURVIVAL_CONSUMPTION_KW: float = 1.5
+# SIMULATED — minimal lighting + hull integrity sensors only; crew quarters, galley and HVAC offline
+# HAB per NASA is physical infrastructure (quarters, lighting, galley) — not atmospheric systems
+# Atmospheric temperature is ECLSS/LSS responsibility; HAB in survival = structural monitoring only
+
+PWR_SURVIVAL_CONSUMPTION_KW: float = 2.0
+# SIMULATED — core distribution bus only; non-essential branches offline (cascade risk if fully cut)
+
+COM_SURVIVAL_CONSUMPTION_KW: float = 0.5
+# SIMULATED — emergency beacon only; all relay and uplink systems offline
+
 # -- Decision thresholds --
 
 ENERGY_ALERT_THRESHOLD_KW: float = -5.0      # SIMULATED — negative balance triggering predictive alert

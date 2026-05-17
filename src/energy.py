@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from .constants import (
-    BATTERY_MIN_KWH,
     BATTERY_TOTAL_CAPACITY_KWH,
     MARS_AIR_DENSITY_KGM3,
     MARTIAN_DAY_HOURS,
@@ -21,7 +20,7 @@ from .constants import (
     WIND_TURBINE_SWEPT_AREA_M2,
 )
 from .alerts import enqueue_alert
-from .enums import AlertType
+from .enums import AlertType, ModuleStatus
 from .models import ColonyState
 
 
@@ -96,7 +95,7 @@ def update_battery(
 
 def compute_total_consumption_kw(modules: dict) -> float:
     """Sum of current_consumption_kw across all active modules."""
-    return sum(m.current_consumption_kw for m in modules.values() if m.active)
+    return sum(m.current_consumption_kw for m in modules.values() if m.status != ModuleStatus.SHUTDOWN)
 
 
 def update_energy_state(state: ColonyState) -> None:

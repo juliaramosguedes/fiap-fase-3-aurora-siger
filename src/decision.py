@@ -15,7 +15,7 @@ from .constants import (
     SOLAR_DUST_CRITICAL_THRESHOLD,
 )
 from .energy import perform_solar_maintenance, perform_wind_maintenance
-from .enums import AlertType, SystemStatus
+from .enums import AlertType, ModuleStatus, SystemStatus
 from .forecast import will_cross_threshold_soon
 from .models import ColonyState, Module
 
@@ -48,48 +48,92 @@ def determine_stage(state: ColonyState) -> SystemStatus:
 
 
 def shutdown_to_stabilize(state: ColonyState) -> bool:
-    """Shut down lowest-priority modules until balance >= 0 or no candidates remain."""
+    """Two-phase shed: essential modules → survival mode; non-essentials → full shutdown."""
+    current_balance = state.energy.balance_kw
+    changed = False
+
+    # Phase 1 — essential modules (survival_consumption_kw set): reduce, never shut down
+    for module in state.modules.values():
+        if (module.status == ModuleStatus.OPERATIONAL
+                and module.survival_consumption_kw is not None):
+            reduction = module.current_consumption_kw - module.survival_consumption_kw
+            module.status = ModuleStatus.SURVIVAL
+            module.current_consumption_kw = module.survival_consumption_kw
+            current_balance += reduction
+            state.survival_stack.append(module.name)
+            changed = True
+            enqueue_alert(
+                state, AlertType.ENERGY_DEFICIT,
+                f"{module.name} em sobrevivência — consumo reduzido para {module.survival_consumption_kw:.1f} kW",
+            )
+
+    if current_balance >= 0:
+        return changed
+
+    # Phase 2 — non-essential modules (no survival_consumption_kw): full shutdown
     candidates = sorted(
-        [m for m in state.modules.values() if m.active and m.priority > 1],
+        [m for m in state.modules.values()
+         if m.status == ModuleStatus.OPERATIONAL and m.priority > 1
+         and m.survival_consumption_kw is None],
         key=lambda m: m.priority,
         reverse=True,
     )
 
-    if not candidates:
-        return False
-
-    current_balance = state.energy.balance_kw
-    shutdown_count = 0
-
     for module in candidates:
         if current_balance >= 0:
             break
-        module.active = False
+        module.status = ModuleStatus.SHUTDOWN
         state.shutdown_stack.append(module.name)
         current_balance += module.current_consumption_kw
-        shutdown_count += 1
+        changed = True
         enqueue_alert(
             state, AlertType.ENERGY_DEFICIT,
             f"{module.name} desligado — bateria crítica: {state.energy.battery_reserve_kwh:.0f} kWh",
         )
 
-    return shutdown_count > 0
+    return changed
 
 
-def reactivate_one_module(state: ColonyState) -> bool:
-    """Reactivate the most recently shut-down module (LIFO). Returns True if a module was reactivated."""
-    if not state.shutdown_stack:
-        return False
+def restore_and_reactivate(state: ColonyState) -> bool:
+    """Restore survival-mode and shutdown modules based on available generation margin.
 
-    module_name = state.shutdown_stack[-1]
-    module = state.modules[module_name]
-    module.active = True
-    state.shutdown_stack.pop()
-    enqueue_alert(
-        state, AlertType.ENERGY_DEFICIT,
-        f"{module.name} reativado — bateria recuperada: {state.energy.battery_reserve_kwh:.0f} kWh",
-    )
-    return True
+    Processes most-critical modules first (lowest priority number).
+    A module is only restored if the current generation margin covers its extra consumption.
+    """
+    generation = state.energy.solar_generation_kw + state.energy.wind_generation_kw
+    available_margin = generation - state.energy.total_consumption_kw
+    changed = False
+
+    # Phase 1 — restore survival-mode modules (most critical first)
+    for module_name in sorted(state.survival_stack, key=lambda n: state.modules[n].priority):
+        module = state.modules[module_name]
+        extra = module.nominal_consumption_kw - module.current_consumption_kw
+        if available_margin >= extra:
+            module.status = ModuleStatus.OPERATIONAL
+            module.current_consumption_kw = module.nominal_consumption_kw
+            available_margin -= extra
+            state.survival_stack.remove(module_name)
+            enqueue_alert(
+                state, AlertType.ENERGY_DEFICIT,
+                f"{module.name} restaurado — consumo normalizado: {module.nominal_consumption_kw:.0f} kW",
+            )
+            changed = True
+
+    # Phase 2 — reactivate shutdown modules (most critical first)
+    for module_name in sorted(state.shutdown_stack, key=lambda n: state.modules[n].priority):
+        module = state.modules[module_name]
+        cost = module.current_consumption_kw
+        if available_margin >= cost:
+            module.status = ModuleStatus.OPERATIONAL
+            available_margin -= cost
+            state.shutdown_stack.remove(module_name)
+            enqueue_alert(
+                state, AlertType.ENERGY_DEFICIT,
+                f"{module.name} reativado — bateria recuperada: {state.energy.battery_reserve_kwh:.0f} kWh",
+            )
+            changed = True
+
+    return changed
 
 
 def apply_maintenance(state: ColonyState) -> None:
@@ -171,8 +215,9 @@ def apply_decision(state: ColonyState) -> None:
     elif new_status == SystemStatus.RECOVERING or (
         state.status == SystemStatus.CRITICAL and new_status == SystemStatus.OPERATIONAL
     ):
-        reactivated = reactivate_one_module(state)
-        state.status = SystemStatus.RECOVERING if (reactivated and state.shutdown_stack) else SystemStatus.OPERATIONAL
+        restore_and_reactivate(state)
+        still_recovering = bool(state.survival_stack or state.shutdown_stack)
+        state.status = SystemStatus.RECOVERING if still_recovering else SystemStatus.OPERATIONAL
 
     else:
         state.status = SystemStatus.OPERATIONAL

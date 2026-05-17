@@ -34,6 +34,15 @@ class AnomalyType(str, Enum):
         return self.value
 
 
+class ModuleStatus(str, Enum):
+    OPERATIONAL = "OPERACIONAL"
+    SURVIVAL    = "SOBREVIVÊNCIA"
+    SHUTDOWN    = "DESLIGADO"
+
+    def __str__(self) -> str:
+        return self.value
+
+
 class ModuleName(str, Enum):
     LIFE_SUPPORT   = "LSS-01 Life Support"
     POWER_SYSTEMS  = "PWR-01 Power Systems"

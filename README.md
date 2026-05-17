@@ -30,7 +30,7 @@ Cenário → Ambiente (dia/noite · vento · tempestade) → Anomalia opcional �
 3. **Anomalia** — injeção probabilística: tempestade, falha de equipamento (+30% consumo) ou erro de sensor (fallback para última leitura válida)
 4. **Energia** — geração solar (`P = A × irr × η × (1−poeira)`) e eólica (Betz: `½ρAv³`) calculadas; bateria atualizada com física correta (`balanço × Δt`)
 5. **Regressão Welford** — três regressões O(1): `vento → geração`, `ciclo → balanço`, `ciclo → solar`; previsão ativa após 4 observações
-6. **Decisão** — 4 estágios em cadeia: CRÍTICO desliga todos os módulos não-essenciais necessários até balanço ≥ 0; ALERTA monitora; RECUPERANDO reativa um por ciclo (LIFO); OPERACIONAL mantém
+6. **Decisão** — 4 estágios em cadeia: CRÍTICO coloca essenciais em modo sobrevivência (MED/HAB/PWR/COM reduzidos) e desliga não-essenciais; ALERTA monitora; RECUPERANDO restaura módulos por margem energética — essenciais primeiro, depois não-essenciais, só restaura o que a geração atual cobre; OPERACIONAL mantém
 7. **Relatório** — progresso por barras ASCII, previsões das três regressões, alertas do ciclo
 
 > [!CAUTION]
@@ -47,9 +47,9 @@ flowchart TD
     F --> G[Atualiza bateria\nbateria + balanco x 12h]
     G --> H[Regressao Welford O1\nvento-geracao e ciclo-balanco]
     H --> I{Estagio operacional?}
-    I -->|CRITICO| L([CRITICO\nDesliga modulos ate balanco >= 0])
+    I -->|CRITICO| L([CRITICO\nSobrevivencia essenciais + desliga nao-essenciais])
     I -->|ALERTA| K([ALERTA\nMonitoramento intensificado])
-    I -->|RECUPERANDO| M([RECUPERANDO\nReativa modulo LIFO])
+    I -->|RECUPERANDO| M([RECUPERANDO\nRestaurar por margem de geracao])
     I -->|OPERACIONAL| J([OPERACIONAL])
     J --> N[Relatorio do ciclo]
     K --> N
@@ -81,8 +81,8 @@ flowchart TD
 ```mermaid
 flowchart LR
     A([CICLO 2 DIA]) --> B["BATERIA > 187 kWh\n✔ 936 kWh"]
-    B --> C["BALANCO >= -10 kW\n✔ +98 kW"]
-    C --> D["BALANCO >= 0 kW\n✔ +98 kW"]
+    B --> C["BALANCO >= -15 kW\n✔ +98 kW"]
+    C --> D["BALANCO >= -5 kW\n✔ +98 kW"]
     D --> E["PREVISAO +6 ciclos\n✔ sem cruzamento"]
     E --> F([✔ OPERACIONAL])
 
@@ -101,14 +101,16 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    A([CICLO X DIA]) --> B["BATERIA > 124 kWh\n✔ 450 kWh"]
-    B --> C["BALANCO >= -10 kW\n✗ -5 kW"]
-    C --> D([☄️ ALERTA])
+    A([CICLO X DIA]) --> B["BATERIA > 187 kWh\n✔ 450 kWh"]
+    B --> C["BALANCO >= -15 kW\n✔ -8 kW"]
+    C --> D["BALANCO >= -5 kW\n✗ -8 kW"]
+    D --> E([☄️ ALERTA])
 
     style A fill:#1a1a2e,color:#fff,stroke:#4a90d9
     style B fill:#1a2a3d,color:#fff,stroke:#2ecc71
-    style C fill:#3d1500,color:#fff,stroke:#f39c12
-    style D fill:#3d2200,color:#fff,stroke:#f39c12,stroke-width:3px
+    style C fill:#1a2a3d,color:#fff,stroke:#2ecc71
+    style D fill:#3d1500,color:#fff,stroke:#f39c12
+    style E fill:#3d2200,color:#fff,stroke:#f39c12,stroke-width:3px
 ```
 
 </details>
@@ -118,7 +120,7 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    A([CICLO X DIA]) --> B["BATERIA > 124 kWh\n✔ 500 kWh"]
+    A([CICLO X DIA]) --> B["BATERIA > 187 kWh\n✔ 500 kWh"]
     B --> C["BALANCO >= ALERTA\n✔ +8 kW"]
     C --> D["PREVISAO +6 ciclos\n✗ -15 kW em 4 ciclos"]
     D --> E([☄️ ALERTA])
@@ -133,18 +135,18 @@ flowchart LR
 </details>
 
 <details>
-<summary>CRITICO — bateria esgotada, 7 módulos desligados</summary>
+<summary>CRITICO — bateria esgotada: essenciais em sobrevivência + desliga não-essenciais</summary>
 
 ```mermaid
 flowchart LR
     A([CICLO X NOITE]) --> B["BATERIA <= 187 kWh\n✗ 120 kWh"]
-    B --> C["Balanco: -46 kW\nCandidatos: 7 modulos"]
-    C --> D["Desliga ate\nbalanco >= 0 kW"]
-    D --> E([☄️ CRITICO — 7 modulos desligados])
+    B --> C["Fase 1 sobrevivencia\nMED/HAB/PWR/COM reduzidos"]
+    C --> D["Fase 2 desligamento\nSCI/LOG/MIN desligados"]
+    D --> E([☄️ CRITICO — consumo 46 kW para 20,5 kW])
 
     style A fill:#1a1a2e,color:#fff,stroke:#4a90d9
     style B fill:#3d0a0a,color:#fff,stroke:#e74c3c
-    style C fill:#1a2a3d,color:#fff,stroke:#2ecc71
+    style C fill:#3d2000,color:#fff,stroke:#f39c12
     style D fill:#1a2a3d,color:#fff,stroke:#2ecc71
     style E fill:#3d0a0a,color:#fff,stroke:#e74c3c,stroke-width:3px
 ```
@@ -152,20 +154,22 @@ flowchart LR
 </details>
 
 <details>
-<summary>RECUPERANDO — bateria acima do mínimo, MIN-01 reativado (LIFO)</summary>
+<summary>RECUPERANDO — restaura por margem energética, essenciais primeiro</summary>
 
 ```mermaid
 flowchart LR
-    A([CICLO X DIA]) --> B["BATERIA > 124 kWh\n✔ 180 kWh"]
-    B --> C["STACK nao vazio\n✔ MIN-01"]
-    C --> D["Reativa topo LIFO\n✔ MIN-01"]
-    D --> E([✔ RECUPERANDO])
+    A([CICLO X DIA]) --> B["BATERIA > 187 kWh\n✔ 200 kWh"]
+    B --> C["geracao - consumo atual\n✔ margem +27 kW"]
+    C --> D["survival_stack: margem cobre?\nMED +2.5 / HAB +5.5 / PWR +2.0 / COM +2.5"]
+    D --> E["shutdown_stack: margem cobre?\nSCI +5 / LOG +3 / MIN +5"]
+    E --> F([✔ RECUPERANDO — restaura o que cabe])
 
     style A fill:#1a1a2e,color:#fff,stroke:#4a90d9
     style B fill:#1a2a3d,color:#fff,stroke:#2ecc71
     style C fill:#1a2a3d,color:#fff,stroke:#2ecc71
     style D fill:#1a2a3d,color:#fff,stroke:#2ecc71
-    style E fill:#0a3d0a,color:#fff,stroke:#2ecc71,stroke-width:3px
+    style E fill:#1a2a3d,color:#fff,stroke:#2ecc71
+    style F fill:#0a3d0a,color:#fff,stroke:#2ecc71,stroke-width:3px
 ```
 
 </details>
@@ -197,8 +201,9 @@ flowchart LR
 
 O MGAB é o sistema computacional integrado que gerencia a energia da colônia Aurora Siger.
 A cada meio-sol marciano, ele calcula a geração solar e eólica, monitora o consumo de cada
-módulo, prevê tendências de deterioração e toma decisões autônomas — desligando módulos
-não-essenciais quando necessário e reativando-os assim que a situação melhora.
+módulo, prevê tendências de deterioração e toma decisões autônomas — ativando modo de
+sobrevivência nos módulos essenciais (MED, HAB, PWR, COM), desligando os não-essenciais e
+restaurando-os quando a geração disponível cobre o custo do retorno.
 
 O sistema opera em quatro estágios: operacional, em alerta, crítico e recuperando.
 Nenhuma intervenção humana é necessária para transitar entre eles.
@@ -228,19 +233,24 @@ Todos os módulos operam 24h de forma autônoma. A literatura confirma: "life su
 systems were controlled automatically" (CELSS, NIH 2019). Desligamentos são
 exclusivamente por decisão energética — nunca por horário.
 
-| Módulo | Prioridade | Consumo nominal |
-|---|---|---|
-| LSS-01 Life Support | 1 — nunca desliga | 14 kW |
-| MED-01 Medical | 2 — essencial | 5 kW |
-| HAB-01 Habitat | 3 — essencial | 7 kW |
-| PWR-01 Power Systems | 4 — essencial | 4 kW |
-| COM-01 Communications | 5 — operacional | 3 kW |
-| SCI-01 Science Lab | 6 — operacional | 5 kW |
-| LOG-01 Logistics | 7 — operacional | 3 kW |
-| MIN-01 ISRU Mining | 8 — desliga primeiro | 5 kW |
+| Módulo | Prioridade | Consumo nominal | Modo sobrevivência |
+|---|---|---|---|
+| LSS-01 Life Support | 1 — inviolável | 14 kW | — nunca reduz |
+| MED-01 Medical | 2 — essencial | 5 kW | 2,5 kW — trauma-only |
+| HAB-01 Habitat | 3 — essencial | 7 kW | 1,5 kW — sensores de casco + iluminação mínima |
+| PWR-01 Power Systems | 4 — essencial | 4 kW | 2,0 kW — bus de distribuição central |
+| COM-01 Communications | 5 — essencial | 3 kW | 0,5 kW — beacon de emergência |
+| SCI-01 Science Lab | 6 — operacional | 5 kW | — desliga |
+| LOG-01 Logistics | 7 — operacional | 3 kW | — desliga |
+| MIN-01 ISRU Mining | 8 — desliga primeiro | 5 kW | — desliga |
 
-**Consumo total: 46 kW** — dentro do range de 24–35 kW para sistemas críticos + 16 kW
-de módulos operacionais. Fonte âncora: Hartwick et al. (2023), 24–35 kW para 6 pessoas.
+HAB não é suporte à vida — per NASA, é infraestrutura física: quartos, galley, iluminação.
+Temperatura e pressão atmosférica são responsabilidade do ECLSS/LSS. Em sobrevivência,
+HAB mantém apenas sensores de integridade do casco e iluminação de emergência.
+
+**Consumo total nominal: 46 kW** — fonte âncora: Hartwick et al. (2023), 24–35 kW para 6 pessoas.
+**Consumo em sobrevivência: 20,5 kW** — MSC (NASA minimum survival configuration). Sustentável
+só com vento nos melhores locais de Marte (48 kW médio por Hartwick et al., 2023).
 
 ---
 
@@ -266,7 +276,7 @@ Selecionar o local com base em recurso energético é a metodologia recomendada 
 |---|---|---|---|
 | Painel solar | 1 × 1.000 m² | 29% eficiência | arXiv:2410.00066 |
 | Turbinas eólicas | 2 × E33 (33,4 m) | ~24 kW nos melhores locais | Hartwick et al. (2023) |
-| Baterias | 2 × 312 kWh | 80% DoD operacional | arXiv:2410.00066 |
+| Baterias | 3 × 312 kWh | 80% DoD operacional | arXiv:2410.00066 |
 
 A segunda turbina e a segunda bateria são redundância operacional — tolerância a falha simples.
 
@@ -298,7 +308,8 @@ A segunda turbina e a segunda bateria são redundância operacional — tolerân
 | Estrutura | Tipo | Papel |
 |---|---|---|
 | `alert_queue` | `deque[AlertEntry]` — FIFO | Hub de entrada de alertas por ciclo; nenhum alerta é descartado |
-| `shutdown_stack` | `list[str]` — LIFO | Pilha de desligamentos para recuperação na ordem inversa |
+| `shutdown_stack` | `list[str]` | Módulos não-essenciais desligados; reativados por margem energética, prioridade crescente |
+| `survival_stack` | `list[str]` | Módulos essenciais em sobrevivência; restaurados antes dos desligados, prioridade crescente |
 | `energy_history` | `list[float]` — append-only | Histórico de balanço energético por ciclo — base do relatório final |
 | `wind_history` | `list[float]` — append-only | Histórico de velocidade do vento por ciclo |
 | `dust_history` | `list[float]` — append-only | Histórico de acumulação de poeira nos painéis |
@@ -312,7 +323,7 @@ A segunda turbina e a segunda bateria são redundância operacional — tolerân
 |---|---|---|---|
 | Welford incremental | Regressão linear online | O(1) por ciclo, O(1) memória | Sem armazenamento de histórico — compatível com hardware embarcado de memória limitada |
 | Priority sort | Seleção do módulo a desligar | O(n log n) | Ordenação reversa por prioridade — garante que o menos crítico desliga primeiro |
-| LIFO recovery | Reativação de módulos | O(1) | Lista como pilha — desfaz desligamentos na ordem inversa exata |
+| Priority-sort recovery | Restauração de módulos | O(n log n) | Ordena survival/shutdown por prioridade crescente — módulo mais crítico restaurado primeiro quando margem de geração cobre o custo |
 | Threshold extrapolation | Previsão de cruzamento de limiar | O(1) | Álgebra direta sobre os coeficientes: `ciclo_cruzamento = (limiar − b) / slope` |
 
 ---
@@ -350,29 +361,42 @@ python main.py --stress --cycles 400       # tempestade global longa
 ☄️ CICLO  11 [NOITE] — AURORA SIGER  [CRÍTICO]
    Resistência é inútil. Protocolo de emergência ativado.
 =================================================================
-🛰  Ambiente
+
+🪐  Ambiente
    Vento: 3.7 m/s              Irradiância: NOITE
    ⚠  Tempestade de poeira — intensidade: 89%
+
 ⚡  Energia
-   Bateria  [█░░░░░░░░░░░░░░░░░░░]     64.8 kWh    6.9%  (CRÍTICO)
+   Bateria  [█░░░░░░░░░░░░░░░░░░░]     64.8 kWh    6.9%  (CRÍTICO)  ▼
    Solar    [░░░░░░░░░░░░░░░░░░░░]      0.0 kW
    Eólica   [░░░░░░░░░░░░░░░░░░░░]      0.0 kW
-   Consumo  [████████████████████]     47.4 kW  |  Balanço:    -47.4 kW
+   Geração  [░░░░░░░░░░░░░░░░░░░░]      0.0 kW  ←  solar + eólica
+   Consumo  [████████████████████]     47.4 kW  |  Balanço:    -47.4 kW  ▇▁█▁▁
    Poeira   [█░░░░░░░░░░░░░░░░░░░]    4.2%
    Abrasão  [░░░░░░░░░░░░░░░░░░░░]    0.0%
-🛰  Módulos ativos (1/8): LSS-01 Life Support
-   Inativos: MED-01 Medical, HAB-01 Habitat, PWR-01 Power Systems, COM-01 Communications, SCI-01 Science Lab, LOG-01 Logistics, MIN-01 ISRU Mining
+
+🛰  Módulos (5/8 ativos)
+   ● LSS-01 Life Support      OPERACIONAL     14.0 kW
+   ◑ MED-01 Medical           SOBREVIVÊNCIA    2.5 kW
+   ◑ HAB-01 Habitat           SOBREVIVÊNCIA    1.5 kW
+   ◑ PWR-01 Power Systems     SOBREVIVÊNCIA    2.0 kW
+   ◑ COM-01 Communications    SOBREVIVÊNCIA    0.5 kW
+   ○ SCI-01 Science Lab       DESLIGADO            —
+   ○ LOG-01 Logistics         DESLIGADO            —
+   ○ MIN-01 ISRU Mining       DESLIGADO            —
+
 📡  Previsão (+6 ciclos): -8.7 kW  [→ estável]
 🌬  Eólica prevista (regressão): -0.8 kW  @ 3.7 m/s
 ☀️   Solar prevista (+6 ciclos): 32.8 kW
+
 🌙  Alertas (7):
-   [DÉFICIT ENERGÉTICO] MIN-01 ISRU Mining desligado — bateria crítica: 65 kWh
-   [DÉFICIT ENERGÉTICO] LOG-01 Logistics desligado — bateria crítica: 65 kWh
-   [DÉFICIT ENERGÉTICO] SCI-01 Science Lab desligado — bateria crítica: 65 kWh
-   [DÉFICIT ENERGÉTICO] COM-01 Communications desligado — bateria crítica: 65 kWh
-   [DÉFICIT ENERGÉTICO] PWR-01 Power Systems desligado — bateria crítica: 65 kWh
-   [DÉFICIT ENERGÉTICO] HAB-01 Habitat desligado — bateria crítica: 65 kWh
-   [DÉFICIT ENERGÉTICO] MED-01 Medical desligado — bateria crítica: 65 kWh
+   🔴  MED-01 Medical em sobrevivência — consumo reduzido para 2.5 kW
+   🔴  HAB-01 Habitat em sobrevivência — consumo reduzido para 1.5 kW
+   🔴  PWR-01 Power Systems em sobrevivência — consumo reduzido para 2.0 kW
+   🔴  COM-01 Communications em sobrevivência — consumo reduzido para 0.5 kW
+   🔴  MIN-01 ISRU Mining desligado — bateria crítica: 65 kWh
+   🔴  LOG-01 Logistics desligado — bateria crítica: 65 kWh
+   🔴  SCI-01 Science Lab desligado — bateria crítica: 65 kWh
 ```
 
 ---
@@ -385,7 +409,7 @@ fiap_fase_3_aurora_siger/
 ├── ENGINEERING_GUIDE.md     ← walkthrough técnico completo para engenheiros
 ├── src/
 │   ├── constants.py         ← constantes físicas, limiares e controle de simulação
-│   ├── enums.py             ← SystemStatus, AlertType, AnomalyType, ModuleName
+│   ├── enums.py             ← SystemStatus, ModuleStatus, AlertType, AnomalyType, ModuleName
 │   ├── models.py            ← ColonyState, EnergyState, AlertEntry (TypedDict)
 │   ├── alerts.py            ← enqueue_alert — fila de alertas tipada
 │   ├── energy.py            ← modelos solar (irradiância) e eólico (Betz)
@@ -408,8 +432,8 @@ fiap_fase_3_aurora_siger/
 
 | Critério | Implementação |
 |---|---|
-| Estruturação de dados | `ColonyState` hierárquico, `deque` para alertas FIFO, pilha LIFO para recuperação, dicionários de enumeração |
-| Lógica de decisão | 4 estágios com condições explícitas, desligamento por prioridade, recuperação LIFO |
+| Estruturação de dados | `ColonyState` hierárquico, `deque` para alertas FIFO, pilhas de recuperação por prioridade, dicionários de enumeração |
+| Lógica de decisão | 4 estágios com condições explícitas, desligamento por prioridade, recuperação por margem energética |
 | Modelagem e previsão | Fórmulas físicas reais (Betz, irradiância solar); regressão Welford com previsão de cruzamento de limiar |
 | Implementação Python | Funções puras, separação por módulo, sem bibliotecas externas |
 | Documentação | README, ENGINEERING_GUIDE, `docs/`, constantes com fonte inline |
@@ -425,7 +449,7 @@ fiap_fase_3_aurora_siger/
 | Suporte de vida controlado automaticamente | *CELSS Study* — NIH (2019) |
 | Automação ECLSS reduz tempo de manutenção regular | NASA ECLSS — NTRS 20230002103 |
 | ISRU: modos de operação 24h e 8h (energia-driven) | *Space S&T* (2021) |
-| Painel solar 29% eficiência; bateria 312 kWh × 2 | arXiv:2410.00066 |
+| Painel solar 29% eficiência; bateria 312 kWh × 3 | arXiv:2410.00066 |
 | Vento noturno usualmente abaixo do cut-in (Viking Lander) | NASA — NTRS 19790057281 |
 | Duração de tempestades regionais marcianas: 6–56 ciclos | *ScienceDirect* (2022) |
 | Regressão linear incremental O(1) | Welford — *Technometrics* (1962) |

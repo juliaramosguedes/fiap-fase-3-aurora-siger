@@ -44,7 +44,7 @@ class ColonyState:
     is_daytime: bool                      # controla geração solar (não schedule de módulos)
     environment: EnvironmentReading
     energy: EnergyState
-    modules: list[Module]
+    modules: dict[str, Module]
     forecast: ForecastState
     status: SystemStatus
     energy_history: list[float]
@@ -54,7 +54,8 @@ class ColonyState:
     active_storm_cycles_remaining: int   # > 0 = tempestade ativa
     last_valid_solar_irradiance_wm2: float
     last_valid_wind_speed_ms: float
-    shutdown_stack: list[str]            # LIFO — ordem inversa para recovery
+    survival_stack: list[str]            # módulos essenciais em sobrevivência; restaurados por prioridade
+    shutdown_stack: list[str]            # módulos não-essenciais desligados; reativados por prioridade
 ```
 
 `is_daytime` controla exclusivamente a geração solar (solar = 0 à noite).
@@ -62,8 +63,9 @@ Não é usado para ligar/desligar módulos — todos os módulos operam 24h.
 Fonte: CELSS (NIH, 2019): "life support systems were controlled automatically";
 NASA ECLSS (NTRS 20230002103): "automation to reduce regular maintenance time".
 
-`shutdown_stack` é uma pilha LIFO declarada em `ColonyState`. Cada desligamento
-empilha o nome do módulo; cada ciclo de recovery desempilha e reativa o topo.
+`survival_stack` e `shutdown_stack` acumulam nomes de módulos durante CRÍTICO.
+Em RECUPERANDO, ambas são percorridas em ordem de prioridade crescente (módulo mais
+crítico restaurado primeiro), limitado à margem de geração disponível no ciclo.
 
 ### EnergyState
 
@@ -161,8 +163,8 @@ o déficit; quando esgota, o sistema entra em CRÍTICO.
 |---|---|---|
 | OPERACIONAL | `battery > MIN` e sem tendência ruim (dia) | Carrega bateria se `balance > 0` |
 | EM ALERTA | `battery > MIN` e regressão prevê cruzamento em ≤ 6 ciclos (dia) | Apenas alerta |
-| CRÍTICO | `battery ≤ BATTERY_MIN_KWH` | Desliga módulo de menor prioridade |
-| RECUPERANDO | `battery > BATTERY_MIN_KWH` após CRÍTICO | Reativa 1 módulo por ciclo (LIFO) |
+| CRÍTICO | `battery ≤ BATTERY_MIN_KWH` | Fase 1: essenciais (MED/HAB/PWR/COM) → modo sobrevivência; Fase 2: não-essenciais → desligados |
+| RECUPERANDO | `battery > BATTERY_MIN_KWH` após CRÍTICO | Restaura módulos por margem de geração, prioridade crescente — todos que cabem no ciclo |
 
 **CRÍTICO só dispara por bateria depleta** — balanço negativo noturno é esperado.
 
@@ -182,7 +184,7 @@ Durante tempestade:
 **Consumo constante 46 kW:** baseado em Hartwick et al. (2023) — 24-35 kW para missão
 de 6 pessoas + 16 kW de módulos operacionais (COM, SCI, LOG, MIN). Sem schedule noturno.
 
-**1 painel + 2 turbinas + 2 baterias:** configuração de referência do arXiv:2410.00066
+**1 painel + 2 turbinas + 3 baterias:** configuração de referência do arXiv:2410.00066
 mais 1 unidade redundante de cada (SIMULATED). Single-failure tolerance.
 
 **Localização nos top-3 sites do Hartwick (2023):** única forma honesta de justificar

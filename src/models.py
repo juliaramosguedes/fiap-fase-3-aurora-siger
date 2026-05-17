@@ -5,19 +5,25 @@ from dataclasses import dataclass, field
 from typing import TypedDict
 
 from .constants import MARS_SURFACE_IRRADIANCE_WM2, WIND_SPEED_SENSOR_FALLBACK_MS
-from .enums import AlertType, SystemStatus
+from .enums import AlertType, ModuleStatus, SystemStatus
 
 
 @dataclass
 class Module:
     """A colony subsystem with energy consumption and operational priority."""
 
+    # Identity
     name: str
-    nominal_consumption_kw: float   # baseline consumption — source of truth
-    current_consumption_kw: float   # actual consumption — may exceed nominal on failure
-    priority: int                   # 1 = critical (last to shut down), higher = first to shut down
-    active: bool
-    sensor_operational: bool
+    priority: int                               # 1 = inviolável, maior = desliga primeiro
+
+    # Consumption
+    nominal_consumption_kw: float               # consumo nominal — fonte de verdade
+    current_consumption_kw: float               # consumo real — pode exceder nominal em falha
+    survival_consumption_kw: float | None = None  # None = elegível para desligamento total
+
+    # Status
+    status: ModuleStatus = ModuleStatus.OPERATIONAL
+    sensor_operational: bool = True
 
 
 @dataclass
@@ -119,3 +125,4 @@ class ColonyState:
     last_valid_solar_irradiance_wm2: float = MARS_SURFACE_IRRADIANCE_WM2
     last_valid_wind_speed_ms: float = WIND_SPEED_SENSOR_FALLBACK_MS
     shutdown_stack: list[str] = field(default_factory=list)
+    survival_stack: list[str] = field(default_factory=list)
