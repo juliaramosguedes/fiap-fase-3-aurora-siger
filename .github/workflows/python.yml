@@ -13,10 +13,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.13"
       - name: Executar simulação padrão
-        run: python main.py --cycles 24 --seed 42
+        run: python main.py --cycles 24
       - name: Executar simulação com anomalia
-        run: python main.py --cycles 24 --anomaly 0.3 --seed 42
+        run: python main.py --cycles 24 --anomaly 0.3
       - name: Executar modo stress
-        run: python main.py --stress --cycles 60 --seed 42
+        run: python main.py --stress --cycles 60
