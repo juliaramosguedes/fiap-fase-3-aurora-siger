@@ -6,7 +6,7 @@
 
 *Atividade Integradora · Fase 3 · Ciência da Computação, 2026 — FIAP*
 
-🧑‍🚀 [Julia Ramos | RM568988](https://www.linkedin.com/in/juliaramosguedes) · [Matheus Fuchelberguer | RM569113](https://www.linkedin.com/in/matheus-fuchelberguer-neves/) · [Julio Joaquim | RM571321](https://github.com/jojigoats) · [Carlos Eugenio | RM570285](https://www.linkedin.com/in/carloseugenioandrade/)
+🧑‍🚀 [Julia Ramos | RM568988](https://www.linkedin.com/in/juliaramosguedes) · [Matheus Fuchelberguer | RM569113](https://www.linkedin.com/in/matheus-fuchelberguer-neves/) · [Carlos Eugenio | RM570285](https://www.linkedin.com/in/carloseugenioandrade/)
 
 ---
 
